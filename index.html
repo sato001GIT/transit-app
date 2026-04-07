@@ -706,9 +706,10 @@ function showFormMsg(msg,isErr){
 // CSV パーサー（1停留所1行形式）
 // ===================================================
 function parseCSV(text){
+  text=text.replace(/^\uFEFF/,'');
   const lines=text.trim().split('\n').map(l=>l.trim()).filter(l=>l);
   if(lines.length<2) throw new Error('データが1行もありません');
-  const header=lines[0].split(',').map(s=>s.trim().toLowerCase());
+  const header=lines[0].split(',').map(s=>s.trim().replace(/^\uFEFF/,'').toLowerCase());
   const req=['type','route','trip_id','days','stop','fare'];
   for(const r of req) if(!header.includes(r)) throw new Error(`列「${r}」がありません`);
   const idx=k=>header.indexOf(k);
