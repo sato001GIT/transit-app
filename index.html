@@ -328,6 +328,7 @@ train,JR富良野線,2,weekday,旭川駅,12:21,,680</div>
 const STORAGE_KEY   = 'transit_routes_v3';
 const COORDS_KEY    = 'transit_coords_v1';
 const SHEET_URL_KEY = 'transit_sheet_url';
+const DEFAULT_SHEET_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vTXbq8lAPzfgwnRIy9U6KHbqcD_EArxIQfLq3gYsqLH0zt_KU1ThsTQEGjEkhKGGRaojsHCFz_DoAfQ/pub?gid=0&single=true&output=csv';
 const SHEET_TS_KEY  = 'transit_sheet_ts';
 
 // trips[] の構造:
@@ -781,7 +782,7 @@ function importCSV(){
 // Googleスプレッドシート連携
 // ===================================================
 async function loadFromSheet(showMsg=true){
-  const url=localStorage.getItem(SHEET_URL_KEY)||'';
+  const url=localStorage.getItem(SHEET_URL_KEY)||DEFAULT_SHEET_URL;
   if(!url) return;
   const el=document.getElementById('sheet-status');
   if(el){ el.innerHTML='<span class="spin"></span>読み込み中…'; el.style.display='block'; }
