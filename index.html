@@ -325,16 +325,19 @@ train,JR富良野線,2,weekday,旭川駅,12:21,,680</div>
 // ===================================================
 // ストレージ
 // ===================================================
-const STORAGE_KEY   = 'transit_routes_v3';
-const COORDS_KEY    = 'transit_coords_v1';
-const SHEET_URL_KEY = 'transit_sheet_url';
+const STORAGE_KEY      = 'transit_routes_v3';
+const COORDS_KEY       = 'transit_coords_v1';
+const FARE_TABLE_KEY   = 'transit_fare_table_v1';
+const SHEET_URL_KEY    = 'transit_sheet_url';
 const DEFAULT_SHEET_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vTXbq8lAPzfgwnRIy9U6KHbqcD_EArxIQfLq3gYsqLH0zt_KU1ThsTQEGjEkhKGGRaojsHCFz_DoAfQ/pub?gid=0&single=true&output=csv';
-const SHEET_TS_KEY  = 'transit_sheet_ts';
+const SHEET_TS_KEY     = 'transit_sheet_ts';
 
 // trips[] の構造:
 // { type, route, days, stops:[{name, arrive:[h,m]|null, depart:[h,m]|null, fare}] }
 let trips = [];
 let stationCoords = {};
+// fareTable[route][fromStop][toStop] = fare
+let fareTable = {};
 let currentFrom = null;
 let editIndex = -1;
 
@@ -407,6 +410,16 @@ function loadCoords() {
     stationCoords = d ? JSON.parse(d) : {};
   } catch(e){ stationCoords = {}; }
   Object.entries(SEED_COORDS).forEach(([n,c])=>{ if(!stationCoords[n]) stationCoords[n]=c; });
+}
+function saveFareTable(){
+  try{ localStorage.setItem(FARE_TABLE_KEY, JSON.stringify(fareTable)); }catch(e){}
+}
+function loadFareTable(){
+  try{ const d=localStorage.getItem(FARE_TABLE_KEY); fareTable=d?JSON.parse(d):{}; }catch(e){ fareTable={}; }
+}
+// 区間運賃を取得（fareTableに登録があればそちらを優先、なければcumulative差額）
+function getFare(route, fromStop, toStop, fallback){
+  return fareTable[route]?.[fromStop]?.[toStop] ?? fallback;
 }
 
 // ===================================================
@@ -719,11 +732,25 @@ function parseCSV(text){
   // trip_idごとにグループ化
   const tripMap=new Map(); // key: "type||route||trip_id||days"
   const coordsMap={}; // { 駅名: {lat,lng} }
+  const parsedFareTable={}; // fareTable[route][fromStop][toStop]=fare
   for(let i=1;i<lines.length;i++){
     const cols=lines[i].split(',');
     const type=get(cols,'type');
+    // 区間運賃テーブル行
+    if(type==='fare'){
+      const route=get(cols,'route');
+      const fromStop=get(cols,'from_stop');
+      const toStop=get(cols,'to_stop');
+      const fare=parseInt(get(cols,'fare'),10)||0;
+      if(route&&fromStop&&toStop){
+        if(!parsedFareTable[route]) parsedFareTable[route]={};
+        if(!parsedFareTable[route][fromStop]) parsedFareTable[route][fromStop]={};
+        parsedFareTable[route][fromStop][toStop]=fare;
+      }
+      continue;
+    }
     if(!['train','bus_dohoku','bus_furano','bus_denki'].includes(type))
-      throw new Error(`${i+1}行目: typeは train/bus_dohoku/bus_furano/bus_denki のいずれか`);
+      throw new Error(`${i+1}行目: typeは train/bus_dohoku/bus_furano/bus_denki/fare のいずれか`);
     const route=get(cols,'route'), tid=get(cols,'trip_id'), days=get(cols,'days')||'all';
     const key=`${type}||${route}||${tid}||${days}`;
     if(!tripMap.has(key)) tripMap.set(key,{type,route,days,stops:[]});
@@ -745,11 +772,11 @@ function parseCSV(text){
     if(t.stops.length<2) throw new Error(`路線「${t.route}」の停留所が1つしかありません`);
     result.push(t);
   }
-  return {trips:result, coords:coordsMap};
+  return {trips:result, coords:coordsMap, fares:parsedFareTable};
 }
 
-// CSVテキストを解析してtrips/coordsをマージする共通処理
-function applyParsed({trips:parsed, coords}){
+// CSVテキストを解析してtrips/coords/fareTableをマージする共通処理
+function applyParsed({trips:parsed, coords, fares={}}){
   let added=0, updated=0;
   const tripKey=t=>`${t.route}||${t.stops[0].name}||${t.stops[t.stops.length-1].name}||${fmt(t.stops[0].depart)}`;
   parsed.forEach(p=>{
@@ -757,9 +784,17 @@ function applyParsed({trips:parsed, coords}){
     const i=trips.findIndex(t=>tripKey(t)===key);
     if(i>=0){ trips[i]=p; updated++; } else { trips.push(p); added++; }
   });
-  // 座標をマージ（CSV側で定義されているものを上書き）
+  // 座標をマージ
   Object.assign(stationCoords, coords);
-  save(); saveCoords();
+  // 区間運賃テーブルをマージ
+  for(const [route, fromMap] of Object.entries(fares)){
+    if(!fareTable[route]) fareTable[route]={};
+    for(const [from, toMap] of Object.entries(fromMap)){
+      if(!fareTable[route][from]) fareTable[route][from]={};
+      Object.assign(fareTable[route][from], toMap);
+    }
+  }
+  save(); saveCoords(); saveFareTable();
   return {added, updated};
 }
 
@@ -851,15 +886,17 @@ function exportCSV(){
 }
 
 function downloadTemplate(){
-  const t=`type,route,trip_id,days,stop,arrive,depart,fare
-train,JR富良野線,1,weekday,美瑛駅,,10:37,0
-train,JR富良野線,1,weekday,千代ヶ岡駅,10:50,10:51,230
-train,JR富良野線,1,weekday,西神楽駅,11:02,11:03,440
-train,JR富良野線,1,weekday,旭川駅,11:11,,680
-train,JR富良野線,2,weekday,美瑛駅,,11:48,0
-train,JR富良野線,2,weekday,旭川駅,12:21,,680
-bus_dohoku,道北バス 66番,3,all,旭川駅前バス停,,8:10,0
-bus_dohoku,道北バス 66番,3,all,美瑛十字街,9:05,,580`;
+  const t=`type,route,trip_id,days,stop,arrive,depart,fare,lat,lng,from_stop,to_stop
+train,JR富良野線,1,weekday,美瑛駅,,10:37,0,43.59098,142.4619,,
+train,JR富良野線,1,weekday,千代ヶ岡駅,10:50,10:51,230,,,,
+train,JR富良野線,1,weekday,西神楽駅,11:02,11:03,440,,,,
+train,JR富良野線,1,weekday,旭川駅,11:11,,680,,,,
+bus_dohoku,道北バス 66番,3,all,旭川駅前バス停,,8:10,0,,,,
+bus_dohoku,道北バス 66番,3,all,神楽岡14条6丁目,8:30,8:31,250,,,,
+bus_dohoku,道北バス 66番,3,all,美瑛十字街,9:05,,580,,,,
+fare,道北バス 66番,,,,,,250,,,旭川駅前バス停,神楽岡14条6丁目
+fare,道北バス 66番,,,,,,580,,,旭川駅前バス停,美瑛十字街
+fare,道北バス 66番,,,,,,550,,,神楽岡14条6丁目,美瑛十字街`;
   const blob=new Blob(['\uFEFF'+t],{type:'text/csv'});
   const a=document.createElement('a'); a.href=URL.createObjectURL(blob);
   a.download='transit_template.csv'; a.click();
@@ -960,7 +997,7 @@ function renderRoute(group, now){
     const fs=t.stops[fromIdx], ls=t.stops[t.stops.length-1];
     if(!fs.depart) return null; // currentFromが終点
     return {t, fromIdx, depart:fs.depart, arrive:ls.arrive,
-            fare:ls.fare-fs.fare, fromName:fs.name, toName:ls.name};
+            fare:getFare(t.route, fs.name, ls.name, ls.fare-fs.fare), fromName:fs.name, toName:ls.name};
   };
 
   const infos=filtered.map(getInfo).filter(Boolean);
@@ -1000,7 +1037,7 @@ function renderRoute(group, now){
         const timeStr=isFirst
           ?(s.depart?`出発 ${fmt(s.depart)}`:'')
           :(s.arrive?fmt(s.arrive):'──')+(s.depart&&!isLast&&fmt(s.arrive)!==fmt(s.depart)?` 発 ${fmt(s.depart)}`:'');
-        const fareStr=si>0?`¥${(s.fare-t.stops[fromIdx].fare).toLocaleString()}`:'';
+        const fareStr=si>0?`¥${getFare(t.route, t.stops[fromIdx].name, s.name, s.fare-t.stops[fromIdx].fare).toLocaleString()}`:'';
         return `<div class="stop-line-item">
           <div class="stop-dot ${dotClass}"></div>
           <span class="stop-name-txt${isFirst?' current':''}">${s.name}</span>
@@ -1117,6 +1154,7 @@ function updateClock(){
 // ===================================================
 load();
 loadCoords();
+loadFareTable();
 resetForm();
 renderSheetSettings();
 updateClock();
