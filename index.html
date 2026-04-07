@@ -8,21 +8,19 @@
     *{box-sizing:border-box;margin:0;padding:0}
     body{font-family:-apple-system,BlinkMacSystemFont,'Hiragino Sans','Noto Sans JP',sans-serif;background:#f0f4f8;color:#1a202c;min-height:100vh;padding-bottom:80px}
 
-    /* ヘッダー */
     header{background:linear-gradient(135deg,#2b6cb0,#4299e1);color:white;padding:16px 16px 12px;position:sticky;top:0;z-index:100;box-shadow:0 2px 8px rgba(0,0,0,.2)}
     .header-top{display:flex;justify-content:space-between;align-items:flex-start}
     header h1{font-size:16px;font-weight:700;letter-spacing:.05em}
     #clock{font-size:32px;font-weight:300;letter-spacing:.1em;margin-top:2px}
     #date-label{font-size:12px;opacity:.85;margin-top:1px}
-    #gps-btn{background:rgba(255,255,255,.2);border:1px solid rgba(255,255,255,.5);color:white;border-radius:8px;padding:6px 10px;font-size:12px;cursor:pointer;white-space:nowrap;display:flex;align-items:center;gap:4px}
+    #gps-btn{background:rgba(255,255,255,.2);border:1px solid rgba(255,255,255,.5);color:white;border-radius:8px;padding:6px 10px;font-size:12px;cursor:pointer;white-space:nowrap;display:flex;align-items:center;gap:4px;min-width:72px;justify-content:center}
     #gps-btn:active{background:rgba(255,255,255,.35)}
+    #gps-btn.gps-on{background:rgba(255,255,255,.3);border-color:white}
 
-    /* タブ */
     .tab-bar{display:flex;background:white;border-bottom:1px solid #e2e8f0;position:sticky;top:82px;z-index:90}
     .tab{flex:1;padding:12px 4px;text-align:center;font-size:13px;font-weight:600;color:#718096;cursor:pointer;border-bottom:3px solid transparent;transition:.2s}
     .tab.active{color:#2b6cb0;border-bottom-color:#2b6cb0}
 
-    /* メインコンテンツ */
     .pane{display:none;padding:12px;max-width:520px;margin:0 auto}
     .pane.active{display:block}
 
@@ -30,16 +28,18 @@
     .route-card{background:white;border-radius:14px;overflow:hidden;margin-bottom:12px;box-shadow:0 1px 4px rgba(0,0,0,.08)}
     .route-header{padding:10px 14px;display:flex;align-items:center;justify-content:space-between}
     .route-header.train{background:#f0fff4;border-left:4px solid #38a169}
-    .route-header.bus-dohoku{background:#fffbeb;border-left:4px solid #d69e2e}
-    .route-header.bus-furano{background:#fff5f5;border-left:4px solid #e53e3e}
+    .route-header.bus-dohoku{background:#ebf8ff;border-left:4px solid #3182ce}
+    .route-header.bus-furano{background:#faf5ff;border-left:4px solid #805ad5}
+    .route-header.bus-denki{background:#fff5f5;border-left:4px solid #e53e3e}
     .route-name{font-weight:700;font-size:14px}
     .route-name.train{color:#276749}
-    .route-name.bus-dohoku{color:#744210}
-    .route-name.bus-furano{color:#742a2a}
+    .route-name.bus-dohoku{color:#1a4f7a}
+    .route-name.bus-furano{color:#553c9a}
+    .route-name.bus-denki{color:#9b2c2c}
     .route-segment{font-size:11px;color:#718096;margin-top:1px}
     .fare-badge{background:#edf2f7;color:#4a5568;font-size:12px;font-weight:600;padding:3px 9px;border-radius:999px;white-space:nowrap}
     .schedule-list{padding:0 4px 6px}
-    .schedule-row{display:flex;align-items:center;padding:8px 10px;border-radius:9px;margin:2px 3px}
+    .schedule-row{display:flex;align-items:center;padding:8px 10px;border-radius:9px;margin:2px 3px;cursor:pointer}
     .schedule-row.next{background:#ebf8ff;border:1.5px solid #bee3f8}
     .schedule-row.passed{opacity:.35}
     .depart-time{font-size:20px;font-weight:700;width:60px;color:#1a202c}
@@ -48,67 +48,133 @@
     .arrive-time{font-size:14px;color:#4a5568;font-weight:500}
     .duration{font-size:10px;color:#a0aec0;margin-left:3px}
     .countdown{margin-left:auto;font-size:11px;font-weight:700;padding:2px 8px;border-radius:999px}
-    .countdown.next-one{background:#2b6cb0;color:white}
     .countdown.soon{background:#c53030;color:white}
+    .countdown.next-one{background:#2b6cb0;color:white}
     .countdown.later{background:#e2e8f0;color:#4a5568}
     .no-more{text-align:center;padding:14px;font-size:13px;color:#a0aec0}
 
-    /* 通知エリア */
+    /* 途中停留所パネル */
+    .stops-popup{
+      overflow:hidden;max-height:0;
+      transition:max-height .35s ease, padding .35s ease, border-color .35s ease;
+      padding:0 14px;background:#f7fafc;border-top:1px solid transparent;
+    }
+    .stops-popup.open{max-height:400px;padding:10px 14px 12px;border-top-color:#e2e8f0}
+    .stops-toggle-hint{font-size:10px;color:#a0aec0;margin-left:auto;padding-left:6px;flex-shrink:0}
+    .schedule-row.has-stops{cursor:pointer}
+    .schedule-row.has-stops:hover .stops-toggle-hint{color:#4299e1}
+
+    /* 停留所リスト（タイムライン風） */
+    .stop-timeline{position:relative;padding-left:20px}
+    .stop-timeline::before{
+      content:'';position:absolute;left:6px;top:10px;bottom:10px;
+      width:2px;background:#e2e8f0;border-radius:2px;
+    }
+    .stop-line-item{display:flex;align-items:baseline;gap:10px;padding:6px 0;font-size:12px;position:relative}
+    .stop-dot{
+      width:10px;height:10px;border-radius:50%;background:#cbd5e0;
+      border:2px solid white;box-shadow:0 0 0 1px #cbd5e0;
+      flex-shrink:0;position:absolute;left:-17px;top:6px;
+    }
+    .stop-dot.current{background:#2b6cb0;box-shadow:0 0 0 2px #bee3f8}
+    .stop-dot.last{background:#276749;box-shadow:0 0 0 2px #9ae6b4}
+    .stop-name-txt{flex:1;color:#2d3748;font-weight:500}
+    .stop-name-txt.current{color:#2b6cb0;font-weight:700}
+    .stop-time-txt{color:#718096;font-variant-numeric:tabular-nums;white-space:nowrap;font-size:11px}
+    .stop-fare-txt{color:#a0aec0;font-size:10px;white-space:nowrap}
+
+    /* 通知 */
     .notice{border-radius:10px;padding:9px 12px;font-size:12px;margin-bottom:10px;display:flex;align-items:center;gap:6px}
     .notice.warning{background:#fffbeb;border:1px solid #f6e05e;color:#744210}
     .notice.info{background:#ebf8ff;border:1px solid #bee3f8;color:#2c5282}
     .notice.gps{background:#f0fff4;border:1px solid #9ae6b4;color:#276749}
 
-    /* 手動切替ボタン */
-    .station-toggle{display:flex;gap:8px;margin-bottom:12px}
-    .toggle-btn{flex:1;padding:14px 8px;border-radius:12px;border:2px solid #e2e8f0;background:white;font-size:15px;font-weight:700;cursor:pointer;color:#718096;transition:.15s;-webkit-tap-highlight-color:transparent}
+    .station-toggle{display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap}
+    .toggle-btn{flex:1;min-width:90px;padding:12px 8px;border-radius:12px;border:2px solid #e2e8f0;background:white;font-size:14px;font-weight:700;cursor:pointer;color:#718096;transition:.15s;-webkit-tap-highlight-color:transparent}
     .toggle-btn.active{border-color:#2b6cb0;background:#ebf8ff;color:#2b6cb0;box-shadow:0 2px 8px rgba(43,108,176,.15)}
     .toggle-btn:active{transform:scale(.97)}
-    @keyframes highlight{0%,100%{transform:scale(1)}50%{transform:scale(1.02)}}
 
-    /* ===== データ管理タブ ===== */
-    .section-label{font-size:12px;font-weight:700;color:#4a5568;margin:14px 0 6px;text-transform:uppercase;letter-spacing:.06em}
+    /* データ管理 */
+    .section-label{font-size:12px;font-weight:700;color:#4a5568;margin:14px 0 6px;text-transform:uppercase;letter-spacing:.06em;display:flex;align-items:center;justify-content:space-between}
     .card{background:white;border-radius:14px;padding:14px;margin-bottom:12px;box-shadow:0 1px 4px rgba(0,0,0,.07)}
 
-    /* CSV書式ガイド */
+    .subtab-bar{display:flex;background:#edf2f7;border-radius:10px;padding:3px;margin-bottom:12px;gap:3px}
+    .subtab{flex:1;padding:9px 6px;text-align:center;font-size:13px;font-weight:600;color:#718096;cursor:pointer;border-radius:8px;transition:.15s}
+    .subtab.active{background:white;color:#2b6cb0;box-shadow:0 1px 4px rgba(0,0,0,.1)}
+    .subpane{display:none}
+    .subpane.active{display:block}
+
+    /* フォーム共通 */
+    .form-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+    .form-group{display:flex;flex-direction:column;gap:4px}
+    .form-group.span-2{grid-column:span 2}
+    .form-label{font-size:11px;font-weight:700;color:#4a5568}
+    .form-control{border:1.5px solid #e2e8f0;border-radius:9px;padding:9px 10px;font-size:14px;background:#fafafa;color:#1a202c;outline:none;transition:.2s;width:100%;-webkit-appearance:none;appearance:none}
+    .form-control:focus{border-color:#4299e1;background:white}
+    .form-control:disabled{opacity:.4;background:#f0f4f8}
+    select.form-control{cursor:pointer}
+    .edit-banner{background:#fef3c7;border:1px solid #fbbf24;border-radius:9px;padding:8px 12px;font-size:12px;font-weight:600;color:#92400e;margin-bottom:10px;display:flex;align-items:center;gap:6px}
+
+    /* 停留所エディタ */
+    .stop-editor-row{display:flex;gap:6px;padding:8px 0;border-bottom:1px solid #f0f4f8;align-items:flex-start}
+    .stop-editor-row:last-child{border-bottom:none}
+    .stop-num-badge{width:22px;height:22px;background:#2b6cb0;color:white;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;flex-shrink:0;margin-top:11px}
+    .stop-num-badge.last{background:#276749}
+    .stop-editor-content{flex:1}
+    .stop-time-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;margin-top:6px}
+    .stop-del-btn{background:none;border:none;color:#fc8181;font-size:16px;cursor:pointer;padding:4px;flex-shrink:0;margin-top:8px;border-radius:6px}
+    .stop-del-btn:hover{background:#fff5f5}
+    .add-stop-btn{width:100%;padding:10px;border:2px dashed #e2e8f0;border-radius:9px;background:none;color:#718096;font-size:13px;font-weight:600;cursor:pointer;margin-top:8px;transition:.15s}
+    .add-stop-btn:hover{border-color:#4299e1;color:#2b6cb0;background:#ebf8ff}
+
+    /* CSV書式 */
     .format-table{width:100%;border-collapse:collapse;font-size:11px;margin-top:6px}
     .format-table th{background:#edf2f7;padding:5px 7px;text-align:left;font-weight:600;color:#4a5568}
     .format-table td{padding:5px 7px;border-bottom:1px solid #e2e8f0;color:#4a5568;vertical-align:top}
     .format-table code{background:#f7fafc;padding:1px 4px;border-radius:3px;font-size:10px;color:#c53030}
-
     .example-box{background:#f7fafc;border:1px solid #e2e8f0;border-radius:8px;padding:10px;font-size:10px;font-family:monospace;color:#4a5568;white-space:pre-wrap;overflow-x:auto;margin-top:8px;line-height:1.6}
-
     textarea{width:100%;border:1.5px solid #e2e8f0;border-radius:10px;padding:10px;font-size:12px;font-family:monospace;resize:vertical;min-height:180px;background:#fafafa;color:#1a202c;outline:none;transition:.2s}
     textarea:focus{border-color:#4299e1;background:white}
 
-    .btn-row{display:flex;gap:8px;margin-top:8px;flex-wrap:wrap}
+    .btn-row{display:flex;gap:8px;margin-top:10px;flex-wrap:wrap}
     .btn{padding:9px 16px;border-radius:9px;border:none;font-size:13px;font-weight:600;cursor:pointer;transition:.15s}
     .btn-primary{background:#3182ce;color:white}
     .btn-primary:active{background:#2b6cb0}
     .btn-secondary{background:#edf2f7;color:#4a5568}
     .btn-secondary:active{background:#e2e8f0}
-    .btn-danger{background:#fff5f5;color:#c53030;border:1px solid #fed7d7}
-
+    .btn-sm{padding:5px 10px;font-size:11px;border-radius:7px}
     .parse-result{margin-top:8px;font-size:12px;color:#276749;background:#f0fff4;border:1px solid #9ae6b4;border-radius:8px;padding:8px 10px;display:none}
     .parse-error{color:#c53030;background:#fff5f5;border-color:#feb2b2}
 
-    /* 登録済みルート一覧 */
-    .route-item{display:flex;align-items:center;justify-content:space-between;padding:9px 0;border-bottom:1px solid #f0f4f8}
-    .route-item:last-child{border-bottom:none}
-    .route-item-name{font-size:13px;font-weight:600;color:#2d3748}
-    .route-item-sub{font-size:11px;color:#718096;margin-top:1px}
-    .route-item-badge{font-size:10px;padding:2px 7px;border-radius:999px;font-weight:600}
+    /* 登録済み一覧 */
+    .trip-card{border-bottom:1px solid #f0f4f8;padding:10px 2px}
+    .trip-card:last-child{border-bottom:none}
+    .trip-card-header{display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-bottom:4px}
+    .trip-card-route{font-size:13px;font-weight:700;color:#2d3748}
+    .trip-card-seg{font-size:11px;color:#718096}
+    .trip-card-times{display:flex;align-items:center;gap:6px;font-size:13px;padding:2px 8px}
+    .trip-depart{font-weight:700;color:#2b6cb0;font-size:15px}
+    .trip-arrow{color:#a0aec0;font-size:11px}
+    .trip-arrive{color:#4a5568;font-weight:500}
+    .trip-dur{font-size:10px;color:#a0aec0}
+    .trip-actions{display:flex;gap:2px;margin-left:auto}
+    .edit-btn{background:none;border:none;color:#4299e1;font-size:15px;cursor:pointer;padding:4px 5px;border-radius:6px}
+    .del-btn{background:none;border:none;color:#fc8181;font-size:15px;cursor:pointer;padding:4px 5px;border-radius:6px}
+    .route-item-badge{font-size:10px;padding:2px 7px;border-radius:999px;font-weight:600;white-space:nowrap}
     .badge-train{background:#f0fff4;color:#276749}
-    .badge-dohoku{background:#fffbeb;color:#744210}
-    .badge-furano{background:#fff5f5;color:#742a2a}
-    .del-btn{background:none;border:none;color:#fc8181;font-size:16px;cursor:pointer;padding:4px 6px}
-
+    .badge-dohoku{background:#ebf8ff;color:#1a4f7a}
+    .badge-furano{background:#faf5ff;color:#553c9a}
+    .badge-denki{background:#fff5f5;color:#9b2c2c}
+    .day-pill{font-size:10px;padding:1px 7px;border-radius:999px;background:#edf2f7;color:#4a5568;font-weight:600}
     .empty-state{text-align:center;padding:24px;color:#a0aec0;font-size:13px}
 
-    .days-pills{display:flex;gap:4px;margin-top:4px;flex-wrap:wrap}
-    .day-pill{font-size:10px;padding:1px 7px;border-radius:999px;background:#edf2f7;color:#4a5568;font-weight:600}
-
-    footer-note{display:block;text-align:center;font-size:11px;color:#a0aec0;padding:16px 0 8px}
+    /* GPS設定 */
+    .gps-station-item{display:flex;align-items:center;justify-content:space-between;padding:8px 4px;border-bottom:1px solid #f0f4f8}
+    .gps-station-item:last-child{border-bottom:none}
+    .gps-coord-ok{color:#276749;font-size:11px;font-family:monospace}
+    .gps-coord-ng{color:#c53030;font-size:11px}
+    .spin{display:inline-block;width:12px;height:12px;border:2px solid #bee3f8;border-top-color:#3182ce;border-radius:50%;animation:spin .6s linear infinite;vertical-align:middle;margin-right:4px}
+    @keyframes spin{to{transform:rotate(360deg)}}
   </style>
 </head>
 <body>
@@ -134,50 +200,120 @@
   <div id="notice-area"></div>
   <div id="station-toggle-area"></div>
   <div id="route-list"></div>
-  <div style="text-align:center;font-size:11px;color:#a0aec0;padding:12px 0">毎秒自動更新</div>
+  <div style="text-align:center;font-size:11px;color:#a0aec0;padding:12px 0">毎秒自動更新 / 行をタップで途中停留所を表示</div>
 </div>
 
 <!-- データ管理タブ -->
 <div class="pane" id="pane-data">
 
-  <div class="section-label">📋 CSV書式</div>
-  <div class="card">
-    <div style="font-size:12px;color:#4a5568;line-height:1.6">
-      1行目はヘッダー行（そのままコピー可）。1便ごとに1行入力してください。
-    </div>
-    <table class="format-table" style="margin-top:8px">
-      <tr><th>列名</th><th>内容</th><th>例</th></tr>
-      <tr><td><code>type</code></td><td>種別</td><td>train / bus_dohoku / bus_furano</td></tr>
-      <tr><td><code>route</code></td><td>路線名</td><td>JR富良野線</td></tr>
-      <tr><td><code>from</code></td><td>出発駅・停留所</td><td>美瑛駅</td></tr>
-      <tr><td><code>via</code></td><td>途中駅（省略可）</td><td>千代ヶ岡駅 ※複数は/区切り</td></tr>
-      <tr><td><code>to</code></td><td>到着駅・停留所</td><td>旭川駅</td></tr>
-      <tr><td><code>fare</code></td><td>運賃（円）</td><td>680</td></tr>
-      <tr><td><code>depart</code></td><td>出発時刻</td><td>10:37</td></tr>
-      <tr><td><code>arrive</code></td><td>到着時刻</td><td>11:11</td></tr>
-      <tr><td><code>days</code></td><td>運行日</td><td>weekday / weekend / all</td></tr>
-    </table>
-    <div class="example-box">type,route,from,via,to,fare,depart,arrive,days
-train,JR富良野線,美瑛駅,,旭川駅,680,10:37,11:11,weekday
-train,JR富良野線,美瑛駅,,旭川駅,680,11:48,12:21,weekday
-bus_dohoku,道北バス 66番,旭川駅前バス停,,美瑛十字街,580,8:10,9:05,all
-bus_furano,富良野バス,美瑛駅前,,富良野駅,430,9:15,10:10,weekday</div>
+  <!-- Googleスプレッドシート設定 -->
+  <div class="section-label" style="margin-top:4px">☁️ Googleスプレッドシート連携</div>
+  <div class="card" id="sheet-settings-body"></div>
+
+  <div class="subtab-bar">
+    <div class="subtab active" onclick="switchSubTab('form')">✏️ 個別入力・編集</div>
+    <div class="subtab" onclick="switchSubTab('csv')">📄 CSV一括入力</div>
   </div>
 
-  <div class="section-label">📥 CSV貼り付け・インポート</div>
-  <div class="card">
-    <textarea id="csv-input" placeholder="ここにCSVを貼り付けてください…&#10;&#10;type,route,from,via,to,fare,depart,arrive,days&#10;train,JR富良野線,美瑛駅,,旭川駅,680,10:37,11:11,weekday"></textarea>
-    <div id="parse-result" class="parse-result"></div>
-    <div class="btn-row">
-      <button class="btn btn-primary" onclick="importCSV()">✅ インポート</button>
-      <button class="btn btn-secondary" onclick="downloadTemplate()">📄 テンプレDL</button>
-      <button class="btn btn-secondary" onclick="exportCSV()">💾 現在のデータをCSV出力</button>
+  <!-- 個別入力 -->
+  <div class="subpane active" id="subpane-form">
+    <div class="card">
+      <div id="edit-banner" class="edit-banner" style="display:none"></div>
+      <div class="form-grid" style="margin-bottom:10px">
+        <div class="form-group">
+          <label class="form-label">種別</label>
+          <select id="f-type" class="form-control">
+            <option value="train">🚃 電車</option>
+            <option value="bus_dohoku">🚌 道北バス</option>
+            <option value="bus_furano">🚌 富良野バス</option>
+            <option value="bus_denki">🚃 旭川電気軌道</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">運行日</label>
+          <select id="f-days" class="form-control">
+            <option value="weekday">平日のみ</option>
+            <option value="weekend">土日祝のみ</option>
+            <option value="all">毎日</option>
+          </select>
+        </div>
+        <div class="form-group span-2">
+          <label class="form-label">路線名</label>
+          <input type="text" id="f-route" class="form-control" placeholder="例: JR富良野線">
+        </div>
+      </div>
+
+      <div class="form-label" style="margin-bottom:6px">停留所リスト（上から順に入力）</div>
+      <div id="stops-editor"></div>
+      <button class="add-stop-btn" onclick="addStop()">＋ 途中停留所を追加</button>
+
+      <datalist id="station-list"></datalist>
+      <div id="form-result" class="parse-result"></div>
+      <div class="btn-row">
+        <button id="form-submit-btn" class="btn btn-primary" onclick="submitForm()">✅ 追加する</button>
+        <button id="form-cancel-btn" class="btn btn-secondary" onclick="cancelEdit()" style="display:none">✕ キャンセル</button>
+      </div>
     </div>
   </div>
 
-  <div class="section-label">🗂 登録済み路線（<span id="route-count">0</span>便）</div>
+  <!-- CSV一括 -->
+  <div class="subpane" id="subpane-csv">
+    <div class="section-label" style="margin-top:4px">📋 CSV書式（v2: 1停留所1行）</div>
+    <div class="card">
+      <div style="font-size:12px;color:#4a5568;line-height:1.6">
+        同じ <code style="background:#f7fafc;padding:1px 4px;border-radius:3px;font-size:10px;color:#c53030">trip_id</code> の行が1便としてまとめられます。到着なし＝始発、出発なし＝終点。運賃は出発地からの累計。
+      </div>
+      <table class="format-table" style="margin-top:8px">
+        <tr><th>列名</th><th>内容</th><th>例</th></tr>
+        <tr><td><code>type</code></td><td>種別</td><td>train / bus_dohoku / bus_furano</td></tr>
+        <tr><td><code>route</code></td><td>路線名</td><td>JR富良野線</td></tr>
+        <tr><td><code>trip_id</code></td><td>便ID（同じ便は同じ番号）</td><td>1</td></tr>
+        <tr><td><code>days</code></td><td>運行日</td><td>weekday / weekend / all</td></tr>
+        <tr><td><code>stop</code></td><td>駅・停留所名</td><td>美瑛駅</td></tr>
+        <tr><td><code>arrive</code></td><td>到着時刻（始発は空欄）</td><td>10:50</td></tr>
+        <tr><td><code>depart</code></td><td>出発時刻（終点は空欄）</td><td>10:37</td></tr>
+        <tr><td><code>fare</code></td><td>出発地からの累計運賃</td><td>0 / 230 / 680</td></tr>
+      </table>
+      <div class="example-box">type,route,trip_id,days,stop,arrive,depart,fare
+train,JR富良野線,1,weekday,美瑛駅,,10:37,0
+train,JR富良野線,1,weekday,千代ヶ岡駅,10:50,10:51,230
+train,JR富良野線,1,weekday,西神楽駅,11:02,11:03,440
+train,JR富良野線,1,weekday,旭川駅,11:11,,680
+train,JR富良野線,2,weekday,美瑛駅,,11:48,0
+train,JR富良野線,2,weekday,旭川駅,12:21,,680</div>
+    </div>
+
+    <div class="section-label">📥 CSV貼り付け・インポート</div>
+    <div class="card">
+      <textarea id="csv-input" placeholder="ここにCSVを貼り付けてください…"></textarea>
+      <div id="parse-result" class="parse-result"></div>
+      <div class="btn-row">
+        <button class="btn btn-primary" onclick="importCSV()">✅ インポート</button>
+        <button class="btn btn-secondary" onclick="downloadTemplate()">📄 テンプレDL</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 登録済み路線 -->
+  <div class="section-label">
+    <span>🗂 登録済み（<span id="route-count">0</span>便）</span>
+    <button class="btn btn-secondary btn-sm" onclick="exportCSV()">💾 CSV出力</button>
+  </div>
   <div class="card" id="registered-routes">
-    <div class="empty-state">まだデータがありません<br>上からCSVをインポートしてください</div>
+    <div class="empty-state">まだデータがありません</div>
+  </div>
+
+  <!-- GPS位置情報設定 -->
+  <div class="section-label">📍 GPS 位置情報設定</div>
+  <div class="card">
+    <div style="font-size:12px;color:#4a5568;line-height:1.6;margin-bottom:10px">
+      各駅・停留所の座標をOpenStreetMapから自動取得、または手動入力できます。
+    </div>
+    <div id="gps-settings-list"><div class="empty-state" style="padding:10px">路線データを登録すると表示されます</div></div>
+    <div class="btn-row">
+      <button class="btn btn-primary" onclick="geocodeAllMissing()">🔍 未登録をまとめて取得</button>
+    </div>
+    <div id="geocode-status" style="margin-top:8px;font-size:12px;color:#718096;display:none"></div>
   </div>
 
   <div style="text-align:center;font-size:11px;color:#a0aec0;padding:12px 0 8px">
@@ -187,374 +323,788 @@ bus_furano,富良野バス,美瑛駅前,,富良野駅,430,9:15,10:10,weekday</di
 
 <script>
 // ===================================================
-// データストア（メモリ＋localStorage）
+// ストレージ
 // ===================================================
-const STORAGE_KEY = 'transit_routes_v2';
-let routes = [];       // {type, route, from, via, to, fare, depart:[h,m], arrive:[h,m], days}
-let currentFrom = null; // GPS or manual で選択中の出発地
+const STORAGE_KEY   = 'transit_routes_v3';
+const COORDS_KEY    = 'transit_coords_v1';
+const SHEET_URL_KEY = 'transit_sheet_url';
+const SHEET_TS_KEY  = 'transit_sheet_ts';
+
+// trips[] の構造:
+// { type, route, days, stops:[{name, arrive:[h,m]|null, depart:[h,m]|null, fare}] }
+let trips = [];
+let stationCoords = {};
+let currentFrom = null;
+let editIndex = -1;
+
+// ---- 停留所エディタの状態 ----
+// [{name, arrive, depart, fare}]  (arrive/depart は "HH:MM" 文字列 or "")
+let formStops = [
+  {name:'', arrive:'', depart:'', fare:'0'},
+  {name:'', arrive:'', depart:'', fare:''}
+];
+
+const SEED_COORDS = {
+  '美瑛駅':         {lat:43.5875,lng:142.4677},
+  '旭川駅':         {lat:43.7706,lng:142.3653},
+  '富良野駅':       {lat:43.3406,lng:142.3833},
+  '美馬牛駅':       {lat:43.5386,lng:142.4756},
+  '千代ヶ岡駅':     {lat:43.6469,lng:142.4475},
+  '西神楽駅':       {lat:43.6969,lng:142.4289},
+  '神楽岡駅':       {lat:43.7472,lng:142.3936},
+  '緑が丘駅':       {lat:43.7583,lng:142.3758},
+  '旭川駅前バス停': {lat:43.7706,lng:142.3653},
+  '美瑛駅前':       {lat:43.5875,lng:142.4677},
+  '美瑛十字街':     {lat:43.5895,lng:142.4700},
+};
 
 function save() {
-  try { localStorage.setItem(STORAGE_KEY, JSON.stringify(routes)); } catch(e){}
+  try { localStorage.setItem(STORAGE_KEY, JSON.stringify(trips)); } catch(e){}
 }
-// 初期データ（CSVから埋め込み済み）
-const PRESET_ROUTES = [{"type":"train","route":"JR富良野線","from":"美瑛駅","via":"","to":"旭川駅","fare":680,"depart":[10,37],"arrive":[11,11],"days":"weekday"},{"type":"train","route":"JR富良野線","from":"美瑛駅","via":"","to":"旭川駅","fare":680,"depart":[11,48],"arrive":[12,21],"days":"weekday"},{"type":"train","route":"JR富良野線","from":"美瑛駅","via":"","to":"旭川駅","fare":680,"depart":[12,25],"arrive":[13,2],"days":"weekday"},{"type":"train","route":"JR富良野線","from":"美瑛駅","via":"","to":"旭川駅","fare":680,"depart":[13,11],"arrive":[13,43],"days":"weekday"},{"type":"train","route":"JR富良野線","from":"美瑛駅","via":"","to":"旭川駅","fare":680,"depart":[13,59],"arrive":[14,33],"days":"weekday"},{"type":"train","route":"JR富良野線","from":"美瑛駅","via":"","to":"旭川駅","fare":680,"depart":[15,31],"arrive":[16,5],"days":"weekday"},{"type":"train","route":"JR富良野線","from":"美瑛駅","via":"","to":"旭川駅","fare":680,"depart":[16,28],"arrive":[17,1],"days":"weekday"},{"type":"train","route":"JR富良野線","from":"美瑛駅","via":"","to":"旭川駅","fare":680,"depart":[17,39],"arrive":[18,19],"days":"weekday"},{"type":"train","route":"JR富良野線","from":"美瑛駅","via":"","to":"旭川駅","fare":680,"depart":[18,5],"arrive":[18,37],"days":"weekday"},{"type":"train","route":"JR富良野線","from":"美瑛駅","via":"","to":"旭川駅","fare":680,"depart":[18,40],"arrive":[19,13],"days":"weekday"}];
+function saveCoords() {
+  try { localStorage.setItem(COORDS_KEY, JSON.stringify(stationCoords)); } catch(e){}
+}
+
+// ---- 旧形式(v2)からマイグレーション ----
+function migrateV2(old) {
+  return old.map(r => ({
+    type: r.type, route: r.route, days: r.days,
+    stops: [
+      {name:r.from, arrive:null, depart:r.depart, fare:0},
+      {name:r.to,   arrive:r.arrive, depart:null, fare:r.fare}
+    ]
+  }));
+}
+
+const PRESET_TRIPS = (()=>{
+  const src=[{"type":"train","route":"JR富良野線","from":"美瑛駅","via":"","to":"旭川駅","fare":680,"depart":[10,37],"arrive":[11,11],"days":"weekday"},{"type":"train","route":"JR富良野線","from":"美瑛駅","via":"","to":"旭川駅","fare":680,"depart":[11,48],"arrive":[12,21],"days":"weekday"},{"type":"train","route":"JR富良野線","from":"美瑛駅","via":"","to":"旭川駅","fare":680,"depart":[12,25],"arrive":[13,2],"days":"weekday"},{"type":"train","route":"JR富良野線","from":"美瑛駅","via":"","to":"旭川駅","fare":680,"depart":[13,11],"arrive":[13,43],"days":"weekday"},{"type":"train","route":"JR富良野線","from":"美瑛駅","via":"","to":"旭川駅","fare":680,"depart":[13,59],"arrive":[14,33],"days":"weekday"},{"type":"train","route":"JR富良野線","from":"美瑛駅","via":"","to":"旭川駅","fare":680,"depart":[15,31],"arrive":[16,5],"days":"weekday"},{"type":"train","route":"JR富良野線","from":"美瑛駅","via":"","to":"旭川駅","fare":680,"depart":[16,28],"arrive":[17,1],"days":"weekday"},{"type":"train","route":"JR富良野線","from":"美瑛駅","via":"","to":"旭川駅","fare":680,"depart":[17,39],"arrive":[18,19],"days":"weekday"},{"type":"train","route":"JR富良野線","from":"美瑛駅","via":"","to":"旭川駅","fare":680,"depart":[18,5],"arrive":[18,37],"days":"weekday"},{"type":"train","route":"JR富良野線","from":"美瑛駅","via":"","to":"旭川駅","fare":680,"depart":[18,40],"arrive":[19,13],"days":"weekday"}];
+  return migrateV2(src);
+})();
 
 function load() {
   try {
-    const d = localStorage.getItem(STORAGE_KEY);
-    if (d) {
-      routes = JSON.parse(d);
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if (raw) {
+      const parsed = JSON.parse(raw);
+      // v2形式が残っていたらマイグレーション
+      if (parsed.length > 0 && parsed[0].from !== undefined) {
+        trips = migrateV2(parsed);
+        save();
+      } else {
+        trips = parsed;
+      }
     } else {
-      // localStorageにデータがなければ埋め込みデータを使用
-      routes = PRESET_ROUTES;
+      trips = PRESET_TRIPS;
       save();
     }
-  } catch(e){ routes = PRESET_ROUTES; }
+  } catch(e){ trips = PRESET_TRIPS; }
 }
 
-// ===================================================
-// CSV パーサー
-// ===================================================
-function parseTime(s) {
-  const [h,m] = s.trim().split(':').map(Number);
-  if (isNaN(h)||isNaN(m)) return null;
-  return [h,m];
-}
-
-function parseCSV(text) {
-  const lines = text.trim().split('\n').map(l=>l.trim()).filter(l=>l);
-  if (lines.length < 2) throw new Error('データが1行もありません');
-  const header = lines[0].split(',').map(s=>s.trim().toLowerCase());
-  const required = ['type','route','from','to','fare','depart','arrive'];
-  for (const r of required) {
-    if (!header.includes(r)) throw new Error(`列「${r}」がありません`);
-  }
-  const idx = k => header.indexOf(k);
-  const parsed = [];
-  for (let i=1;i<lines.length;i++) {
-    const cols = lines[i].split(',');
-    const get = k => (cols[idx(k)]||'').trim();
-    const dep = parseTime(get('depart'));
-    const arr = parseTime(get('arrive'));
-    if (!dep||!arr) throw new Error(`${i+1}行目: 時刻の形式が正しくありません`);
-    const fare = parseInt(get('fare'),10);
-    if (isNaN(fare)) throw new Error(`${i+1}行目: 運賃が数値ではありません`);
-    const type = get('type');
-    const validTypes = ['train','bus_dohoku','bus_furano'];
-    if (!validTypes.includes(type)) throw new Error(`${i+1}行目: typeは train / bus_dohoku / bus_furano のいずれかにしてください`);
-    const days = get('days') || 'all';
-    parsed.push({ type, route:get('route'), from:get('from'), via:get('via'), to:get('to'), fare, depart:dep, arrive:arr, days });
-  }
-  return parsed;
-}
-
-// ===================================================
-// インポート・エクスポート
-// ===================================================
-function importCSV() {
-  const text = document.getElementById('csv-input').value;
-  const res = document.getElementById('parse-result');
+function loadCoords() {
   try {
-    const parsed = parseCSV(text);
-    routes.push(...parsed);
-    save();
-    res.className='parse-result';
-    res.style.display='block';
-    res.textContent = `✅ ${parsed.length}件をインポートしました（合計 ${routes.length}件）`;
-    document.getElementById('csv-input').value='';
-    renderRegistered();
-    renderTimetable();
-  } catch(e) {
-    res.className='parse-result parse-error';
-    res.style.display='block';
-    res.textContent = `❌ エラー: ${e.message}`;
-  }
-}
-
-function exportCSV() {
-  const header = 'type,route,from,via,to,fare,depart,arrive,days';
-  const rows = routes.map(r =>
-    [r.type, r.route, r.from, r.via||'', r.to, r.fare,
-     pad(r.depart[0])+':'+pad(r.depart[1]),
-     pad(r.arrive[0])+':'+pad(r.arrive[1]),
-     r.days].join(',')
-  );
-  const csv = [header,...rows].join('\n');
-  const blob = new Blob([csv],{type:'text/csv'});
-  const a = document.createElement('a');
-  a.href = URL.createObjectURL(blob);
-  a.download = 'transit_data.csv';
-  a.click();
-}
-
-function downloadTemplate() {
-  const template = `type,route,from,via,to,fare,depart,arrive,days
-train,JR富良野線,美瑛駅,,旭川駅,680,10:37,11:11,weekday
-train,JR富良野線,美瑛駅,,旭川駅,680,11:48,12:21,weekday
-train,JR富良野線,旭川駅,,美瑛駅,680,09:00,09:35,weekday
-bus_dohoku,道北バス 66番,旭川駅前バス停,,美瑛十字街,580,8:10,9:05,all
-bus_furano,富良野バス,美瑛駅前,,富良野駅,430,9:15,10:10,weekday`;
-  const blob = new Blob([template],{type:'text/csv'});
-  const a = document.createElement('a');
-  a.href = URL.createObjectURL(blob);
-  a.download = 'transit_template.csv';
-  a.click();
+    const d = localStorage.getItem(COORDS_KEY);
+    stationCoords = d ? JSON.parse(d) : {};
+  } catch(e){ stationCoords = {}; }
+  Object.entries(SEED_COORDS).forEach(([n,c])=>{ if(!stationCoords[n]) stationCoords[n]=c; });
 }
 
 // ===================================================
-// 登録済み一覧
+// ユーティリティ
 // ===================================================
-const typeLabel = { train:'🚃 電車', bus_dohoku:'🚌 道北バス', bus_furano:'🚌 富良野バス' };
-const typeBadge = { train:'badge-train', bus_dohoku:'badge-dohoku', bus_furano:'badge-furano' };
-const daysLabel = { weekday:'平日', weekend:'土日祝', all:'毎日' };
-
-function renderRegistered() {
-  const el = document.getElementById('registered-routes');
-  document.getElementById('route-count').textContent = routes.length;
-
-  if (routes.length === 0) {
-    el.innerHTML = '<div class="empty-state">まだデータがありません<br>上からCSVをインポートしてください</div>';
-    return;
-  }
-
-  // 路線ごとにグループ化して表示
-  const groups = {};
-  routes.forEach((r,i) => {
-    const key = `${r.type}||${r.route}||${r.from}||${r.to}`;
-    if (!groups[key]) groups[key]={...r, indices:[],count:0};
-    groups[key].indices.push(i);
-    groups[key].count++;
-  });
-
-  el.innerHTML = Object.entries(groups).map(([key,g]) => `
-    <div class="route-item">
-      <div>
-        <div class="route-item-name">${g.route}</div>
-        <div class="route-item-sub">${g.from} → ${g.to}　¥${g.fare.toLocaleString()}　${g.count}便</div>
-        <div class="days-pills">
-          <span class="day-pill">${typeLabel[g.type]||g.type}</span>
-          <span class="day-pill">${daysLabel[g.days]||g.days}</span>
-        </div>
-      </div>
-      <button class="del-btn" onclick="deleteGroup(${JSON.stringify(g.indices.join(','))})" title="削除">🗑</button>
-    </div>
-  `).join('');
-}
-
-function deleteGroup(indicesStr) {
-  const indices = indicesStr.split(',').map(Number).sort((a,b)=>b-a);
-  if (!confirm(`この路線の${indices.length}便を削除しますか？`)) return;
-  indices.forEach(i => routes.splice(i,1));
-  save();
-  renderRegistered();
-  renderTimetable();
+function pad(n){ return String(n).padStart(2,'0'); }
+function toMin(h,m){ return h*60+m; }
+function fmt(hm){ return hm ? pad(hm[0])+':'+pad(hm[1]) : '──'; }
+function isWeekend(d){ return d.getDay()===0||d.getDay()===6; }
+function parseTime(s) {
+  if (!s||!s.trim()) return null;
+  const [h,m] = s.trim().split(':').map(Number);
+  return (isNaN(h)||isNaN(m)) ? null : [h,m];
 }
 
 // ===================================================
 // GPS
 // ===================================================
-let gpsWatcher = null;
-let gpsStatus = 'idle'; // idle | watching | denied
-
-const STATIONS = [
-  { name:'美瑛駅', lat:43.5875, lng:142.4677 },
-  { name:'旭川駅', lat:43.7706, lng:142.3653 },
-  // 必要に応じて追加
-];
-
-function dist(lat1,lng1,lat2,lng2) {
-  const R=6371000, dLat=(lat2-lat1)*Math.PI/180, dLng=(lng2-lng1)*Math.PI/180;
+function distM(lat1,lng1,lat2,lng2){
+  const R=6371000,dLat=(lat2-lat1)*Math.PI/180,dLng=(lng2-lng1)*Math.PI/180;
   const a=Math.sin(dLat/2)**2+Math.cos(lat1*Math.PI/180)*Math.cos(lat2*Math.PI/180)*Math.sin(dLng/2)**2;
   return R*2*Math.atan2(Math.sqrt(a),Math.sqrt(1-a));
 }
 
-function nearestStation(lat,lng) {
-  let best=null, bestD=Infinity;
-  STATIONS.forEach(s=>{
-    const d=dist(lat,lng,s.lat,s.lng);
-    if(d<bestD){bestD=d;best=s;}
-  });
-  return {station:best, distM:bestD};
+function allStopNames(){
+  return [...new Set(trips.flatMap(t=>t.stops.map(s=>s.name)))];
 }
 
-function requestGPS() {
-  const btn = document.getElementById('gps-btn');
-
-  // file://プロトコルではGPSが使えないため手動切替を案内
-  if (location.protocol === 'file:') {
-    btn.textContent = '📍 GPS非対応';
-    setTimeout(() => { btn.textContent = '📍 GPS'; }, 2000);
-    const toggleArea = document.getElementById('station-toggle-area');
-    if (toggleArea.querySelector('.station-toggle')) {
-      toggleArea.style.animation = 'none';
-      toggleArea.offsetHeight; // reflow
-      toggleArea.style.animation = 'highlight 0.6s ease';
+function nearestStop(lat,lng){
+  let best=null, bestD=Infinity;
+  allStopNames().forEach(name=>{
+    if(stationCoords[name]){
+      const d=distM(lat,lng,stationCoords[name].lat,stationCoords[name].lng);
+      if(d<bestD){bestD=d;best=name;}
     }
-    return;
+  });
+  return {name:best, d:bestD};
+}
+
+function applyPosition(lat,lng){
+  const btn=document.getElementById('gps-btn');
+  const {name,d}=nearestStop(lat,lng);
+  if(name){
+    currentFrom=name;
+    const dt=d<1000?`${Math.round(d)}m`:`${(d/1000).toFixed(1)}km`;
+    btn.innerHTML=`📍 ${name}<br><span style="font-size:10px;opacity:.8">${dt}</span>`;
+    btn.classList.add('gps-on');
+    renderTimetable();
+  } else {
+    btn.textContent='📍 GPS ✓';
+    btn.classList.add('gps-on');
+  }
+}
+
+function requestGPS(){
+  const btn=document.getElementById('gps-btn');
+  if(!navigator.geolocation){ btn.textContent='📍 非対応'; return; }
+  btn.innerHTML='<span class="spin"></span>取得中…';
+  navigator.geolocation.getCurrentPosition(
+    pos=>applyPosition(pos.coords.latitude,pos.coords.longitude),
+    err=>{
+      btn.textContent='📍 GPS'; btn.classList.remove('gps-on');
+      if(err.code===1) alert('位置情報のアクセスが拒否されました。\nブラウザの設定から許可してください。');
+    },
+    {enableHighAccuracy:true,timeout:10000}
+  );
+}
+
+function autoGPS(){
+  if(!navigator.geolocation) return;
+  navigator.geolocation.getCurrentPosition(
+    pos=>applyPosition(pos.coords.latitude,pos.coords.longitude),
+    ()=>{},{enableHighAccuracy:false,timeout:8000,maximumAge:120000}
+  );
+}
+
+// ===================================================
+// ジオコーディング (Nominatim)
+// ===================================================
+async function geocodeStation(name){
+  try{
+    const res=await fetch(`https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(name)}&format=json&limit=1&countrycodes=jp&accept-language=ja`);
+    if(!res.ok) return null;
+    const data=await res.json();
+    if(data.length>0) return {lat:parseFloat(data[0].lat),lng:parseFloat(data[0].lon)};
+  }catch(e){}
+  return null;
+}
+
+async function geocodeAllMissing(){
+  const missing=allStopNames().filter(n=>!stationCoords[n]);
+  const el=document.getElementById('geocode-status');
+  if(missing.length===0){
+    el.style.display='block'; el.textContent='✅ すべて登録済みです';
+    setTimeout(()=>el.style.display='none',3000); return;
+  }
+  el.style.display='block';
+  for(let i=0;i<missing.length;i++){
+    const name=missing[i];
+    el.innerHTML=`<span class="spin"></span>取得中 (${i+1}/${missing.length}): ${name}`;
+    const c=await geocodeStation(name);
+    if(c){ stationCoords[name]=c; saveCoords(); }
+    renderGPSSettings();
+    if(i<missing.length-1) await new Promise(r=>setTimeout(r,1200));
+  }
+  el.textContent=`✅ 完了（${missing.length}件処理）`;
+  setTimeout(()=>el.style.display='none',3000);
+}
+
+async function geocodeSingle(name){
+  const c=await geocodeStation(name);
+  if(c){ stationCoords[name]=c; saveCoords(); renderGPSSettings(); }
+  else alert(`「${name}」の自動取得に失敗しました。手動入力してください。`);
+}
+
+function manualCoord(name){
+  const c=stationCoords[name];
+  const cur=c?`${c.lat},${c.lng}`:'';
+  const v=prompt(`「${name}」の緯度,経度を入力\n例: 43.5875,142.4677`,cur);
+  if(v===null) return;
+  const p=v.split(',').map(s=>parseFloat(s.trim()));
+  if(p.length!==2||isNaN(p[0])||isNaN(p[1])){ alert('「緯度,経度」の形式で入力してください'); return; }
+  stationCoords[name]={lat:p[0],lng:p[1]}; saveCoords(); renderGPSSettings();
+}
+
+function renderGPSSettings(){
+  const el=document.getElementById('gps-settings-list');
+  const names=allStopNames();
+  if(names.length===0){
+    el.innerHTML='<div class="empty-state" style="padding:10px">路線データを登録すると表示されます</div>'; return;
+  }
+  el.innerHTML=names.map(name=>{
+    const c=stationCoords[name];
+    const coord=c
+      ?`<span class="gps-coord-ok">✅ ${c.lat.toFixed(4)}, ${c.lng.toFixed(4)}</span>`
+      :`<span class="gps-coord-ng">❓ 未登録</span>`;
+    const esc=name.replace(/'/g,"\\'");
+    return `<div class="gps-station-item">
+      <div><div style="font-size:13px;font-weight:600">${name}</div><div style="margin-top:2px">${coord}</div></div>
+      <div style="display:flex;gap:4px">
+        <button class="btn btn-secondary btn-sm" onclick="geocodeSingle('${esc}')">🔍</button>
+        <button class="btn btn-secondary btn-sm" onclick="manualCoord('${esc}')">✏️</button>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+// ===================================================
+// 停留所エディタ
+// ===================================================
+function renderStopsEditor(){
+  const n=formStops.length;
+  document.getElementById('stops-editor').innerHTML=formStops.map((s,i)=>{
+    const isFirst=i===0, isLast=i===n-1;
+    const canDel=n>2;
+    return `<div class="stop-editor-row">
+      <div class="stop-num-badge${isLast?' last':''}">${i+1}</div>
+      <div class="stop-editor-content">
+        <div style="display:flex;gap:6px;align-items:center">
+          <input type="text" class="form-control stop-name" list="station-list"
+            placeholder="${isFirst?'出発駅・停留所':isLast?'終着駅・停留所':'途中駅・停留所'}"
+            value="${s.name}" autocomplete="off">
+        </div>
+        <div class="stop-time-grid">
+          <div class="form-group">
+            <label class="form-label">到着</label>
+            <input type="time" class="form-control stop-arrive" value="${s.arrive}" ${isFirst?'disabled':''}>
+          </div>
+          <div class="form-group">
+            <label class="form-label">出発</label>
+            <input type="time" class="form-control stop-depart" value="${s.depart}" ${isLast?'disabled':''}>
+          </div>
+          <div class="form-group">
+            <label class="form-label">累計運賃(¥)</label>
+            <input type="number" class="form-control stop-fare" value="${s.fare}" min="0"
+              inputmode="numeric" ${isFirst?'disabled':''} placeholder="0">
+          </div>
+        </div>
+      </div>
+      ${canDel?`<button class="stop-del-btn" onclick="removeStop(${i})">🗑</button>`:'<div style="width:28px"></div>'}
+    </div>`;
+  }).join('');
+}
+
+function syncFormStops(){
+  const rows=document.querySelectorAll('#stops-editor .stop-editor-row');
+  formStops=[...rows].map(row=>({
+    name:  row.querySelector('.stop-name').value,
+    arrive:row.querySelector('.stop-arrive').value,
+    depart:row.querySelector('.stop-depart').value,
+    fare:  row.querySelector('.stop-fare').value
+  }));
+}
+
+function addStop(){
+  syncFormStops();
+  formStops.splice(formStops.length-1,0,{name:'',arrive:'',depart:'',fare:''});
+  renderStopsEditor();
+}
+
+function removeStop(idx){
+  syncFormStops();
+  if(formStops.length<=2) return;
+  formStops.splice(idx,1);
+  renderStopsEditor();
+}
+
+function getStopsData(){
+  syncFormStops();
+  const n=formStops.length;
+  return formStops.map((s,i)=>({
+    name:   s.name.trim(),
+    arrive: i===0 ? null : parseTime(s.arrive),
+    depart: i===n-1 ? null : parseTime(s.depart),
+    fare:   i===0 ? 0 : (parseInt(s.fare,10)||0)
+  }));
+}
+
+function resetForm(){
+  formStops=[{name:'',arrive:'',depart:'',fare:'0'},{name:'',arrive:'',depart:'',fare:''}];
+  document.getElementById('f-type').value='train';
+  document.getElementById('f-route').value='';
+  document.getElementById('f-days').value='weekday';
+  renderStopsEditor();
+}
+
+// ===================================================
+// 個別入力フォーム 送信・編集
+// ===================================================
+function submitForm(){
+  const type  =document.getElementById('f-type').value;
+  const route =document.getElementById('f-route').value.trim();
+  const days  =document.getElementById('f-days').value;
+  const stops =getStopsData();
+
+  if(!route){ showFormMsg('❌ 路線名を入力してください',true); return; }
+  if(stops.some(s=>!s.name)){ showFormMsg('❌ すべての駅・停留所名を入力してください',true); return; }
+  if(!stops[0].depart){ showFormMsg('❌ 始発の出発時刻を入力してください',true); return; }
+  if(!stops[stops.length-1].arrive){ showFormMsg('❌ 終点の到着時刻を入力してください',true); return; }
+
+  const entry={type,route,days,stops};
+
+  if(editIndex>=0){
+    trips[editIndex]=entry;
+    showFormMsg(`✅ ${route} を更新しました`);
+    editIndex=-1;
+    document.getElementById('edit-banner').style.display='none';
+    document.getElementById('form-submit-btn').textContent='✅ 追加する';
+    document.getElementById('form-cancel-btn').style.display='none';
+  } else {
+    trips.push(entry);
+    showFormMsg(`✅ ${route} を追加しました`);
+  }
+  save(); resetForm(); renderRegistered(); renderTimetable();
+  geocodeAllMissing();
+}
+
+function editTrip(index){
+  const t=trips[index];
+  document.getElementById('f-type').value =t.type;
+  document.getElementById('f-route').value=t.route;
+  document.getElementById('f-days').value =t.days;
+  formStops=t.stops.map(s=>({
+    name:   s.name,
+    arrive: s.arrive ? pad(s.arrive[0])+':'+pad(s.arrive[1]) : '',
+    depart: s.depart ? pad(s.depart[0])+':'+pad(s.depart[1]) : '',
+    fare:   String(s.fare)
+  }));
+  renderStopsEditor();
+  editIndex=index;
+  const first=t.stops[0], last=t.stops[t.stops.length-1];
+  const banner=document.getElementById('edit-banner');
+  banner.innerHTML=`✏️ 編集中: ${t.route}　${fmt(first.depart)} → ${fmt(last.arrive)}`;
+  banner.style.display='flex';
+  document.getElementById('form-submit-btn').textContent='💾 更新する';
+  document.getElementById('form-cancel-btn').style.display='';
+  switchTab('data'); switchSubTab('form');
+  document.getElementById('subpane-form').scrollIntoView({behavior:'smooth',block:'start'});
+  document.getElementById('form-result').style.display='none';
+}
+
+function cancelEdit(){
+  editIndex=-1; resetForm();
+  document.getElementById('edit-banner').style.display='none';
+  document.getElementById('form-submit-btn').textContent='✅ 追加する';
+  document.getElementById('form-cancel-btn').style.display='none';
+  document.getElementById('form-result').style.display='none';
+}
+
+function showFormMsg(msg,isErr){
+  const el=document.getElementById('form-result');
+  el.className='parse-result'+(isErr?' parse-error':'');
+  el.textContent=msg; el.style.display='block';
+  if(!isErr) setTimeout(()=>el.style.display='none',3000);
+}
+
+// ===================================================
+// CSV パーサー（1停留所1行形式）
+// ===================================================
+function parseCSV(text){
+  const lines=text.trim().split('\n').map(l=>l.trim()).filter(l=>l);
+  if(lines.length<2) throw new Error('データが1行もありません');
+  const header=lines[0].split(',').map(s=>s.trim().toLowerCase());
+  const req=['type','route','trip_id','days','stop','fare'];
+  for(const r of req) if(!header.includes(r)) throw new Error(`列「${r}」がありません`);
+  const idx=k=>header.indexOf(k);
+  const get=(cols,k)=>idx(k)>=0?(cols[idx(k)]||'').trim():'';
+
+  // trip_idごとにグループ化
+  const tripMap=new Map(); // key: "type||route||trip_id||days"
+  const coordsMap={}; // { 駅名: {lat,lng} }
+  for(let i=1;i<lines.length;i++){
+    const cols=lines[i].split(',');
+    const type=get(cols,'type');
+    if(!['train','bus_dohoku','bus_furano','bus_denki'].includes(type))
+      throw new Error(`${i+1}行目: typeは train/bus_dohoku/bus_furano/bus_denki のいずれか`);
+    const route=get(cols,'route'), tid=get(cols,'trip_id'), days=get(cols,'days')||'all';
+    const key=`${type}||${route}||${tid}||${days}`;
+    if(!tripMap.has(key)) tripMap.set(key,{type,route,days,stops:[]});
+    const arrive=parseTime(get(cols,'arrive'));
+    const depart=parseTime(get(cols,'depart'));
+    const fare=parseInt(get(cols,'fare'),10)||0;
+    const stopName=get(cols,'stop');
+    tripMap.get(key).stops.push({name:stopName,arrive,depart,fare});
+    // lat/lng列があれば座標として収集（駅名ごとに最初の値を使用）
+    const lat=parseFloat(get(cols,'lat')), lng=parseFloat(get(cols,'lng'));
+    if(!isNaN(lat)&&!isNaN(lng)&&stopName&&!coordsMap[stopName]){
+      coordsMap[stopName]={lat,lng};
+    }
   }
 
-  btn.textContent = '📍 取得中…';
-  if (!navigator.geolocation) {
-    btn.textContent = '📍 非対応';
-    return;
+  // 各tripを検証
+  const result=[];
+  for(const [,t] of tripMap){
+    if(t.stops.length<2) throw new Error(`路線「${t.route}」の停留所が1つしかありません`);
+    result.push(t);
   }
-  navigator.geolocation.getCurrentPosition(pos => {
-    const {latitude:lat,longitude:lng} = pos.coords;
-    const {station} = nearestStation(lat,lng);
-    gpsStatus = 'watching';
-    btn.innerHTML = `📍 ${station.name}`;
-    currentFrom = station.name;
-    renderTimetable();
-  }, err => {
-    gpsStatus = 'denied';
-    btn.textContent = '📍 GPS';
-  }, {enableHighAccuracy:true, timeout:10000});
+  return {trips:result, coords:coordsMap};
+}
+
+// CSVテキストを解析してtrips/coordsをマージする共通処理
+function applyParsed({trips:parsed, coords}){
+  let added=0, updated=0;
+  const tripKey=t=>`${t.route}||${t.stops[0].name}||${t.stops[t.stops.length-1].name}||${fmt(t.stops[0].depart)}`;
+  parsed.forEach(p=>{
+    const key=tripKey(p);
+    const i=trips.findIndex(t=>tripKey(t)===key);
+    if(i>=0){ trips[i]=p; updated++; } else { trips.push(p); added++; }
+  });
+  // 座標をマージ（CSV側で定義されているものを上書き）
+  Object.assign(stationCoords, coords);
+  save(); saveCoords();
+  return {added, updated};
+}
+
+function importCSV(){
+  const text=document.getElementById('csv-input').value;
+  const res=document.getElementById('parse-result');
+  try{
+    const {added,updated}=applyParsed(parseCSV(text));
+    res.className='parse-result'; res.style.display='block';
+    res.textContent=`✅ 新規追加 ${added}便 ／ 上書き更新 ${updated}便（合計 ${trips.length}便）`;
+    document.getElementById('csv-input').value='';
+    renderRegistered(); renderTimetable(); renderGPSSettings();
+  }catch(e){
+    res.className='parse-result parse-error'; res.style.display='block';
+    res.textContent=`❌ エラー: ${e.message}`;
+  }
+}
+
+// ===================================================
+// Googleスプレッドシート連携
+// ===================================================
+async function loadFromSheet(showMsg=true){
+  const url=localStorage.getItem(SHEET_URL_KEY)||'';
+  if(!url) return;
+  const el=document.getElementById('sheet-status');
+  if(el){ el.innerHTML='<span class="spin"></span>読み込み中…'; el.style.display='block'; }
+  try{
+    const res=await fetch(url);
+    if(!res.ok) throw new Error(`HTTP ${res.status}`);
+    const text=await res.text();
+    const {added,updated}=applyParsed(parseCSV(text));
+    const ts=new Date().toLocaleString('ja-JP');
+    localStorage.setItem(SHEET_TS_KEY, ts);
+    if(el){ el.textContent=`✅ 更新完了（${added}件追加・${updated}件更新）　${ts}`; }
+    renderRegistered(); renderTimetable(); renderGPSSettings();
+  }catch(e){
+    if(el){ el.className='parse-result parse-error'; el.style.display='block';
+            el.textContent=`❌ 読み込み失敗: ${e.message}`; }
+  }
+}
+
+function saveSheetUrl(){
+  const url=document.getElementById('sheet-url-input').value.trim();
+  localStorage.setItem(SHEET_URL_KEY, url);
+  renderSheetSettings();
+  if(url) loadFromSheet();
+}
+
+function renderSheetSettings(){
+  const url=localStorage.getItem(SHEET_URL_KEY)||'';
+  const ts =localStorage.getItem(SHEET_TS_KEY)||'未取得';
+  const el=document.getElementById('sheet-settings-body');
+  if(!el) return;
+  el.innerHTML=`
+    <div style="font-size:12px;color:#4a5568;margin-bottom:8px">
+      スプレッドシートを「ウェブに公開（CSV形式）」したURLを入力してください。<br>
+      起動時に自動取得し、スプレッドシートを編集するだけで全員に反映されます。
+    </div>
+    <input type="url" id="sheet-url-input" class="form-control"
+      placeholder="https://docs.google.com/spreadsheets/..."
+      value="${url}" style="font-size:11px;margin-bottom:8px">
+    <div id="sheet-status" class="parse-result" style="${url?'display:block':'display:none'}">
+      最終取得: ${ts}
+    </div>
+    <div class="btn-row">
+      <button class="btn btn-primary" onclick="saveSheetUrl()">💾 保存して読み込む</button>
+      ${url?`<button class="btn btn-secondary" onclick="loadFromSheet()">🔄 今すぐ更新</button>`:''}
+    </div>`;
+}
+
+function exportCSV(){
+  const header='type,route,trip_id,days,stop,arrive,depart,fare,lat,lng';
+  const rows=[];
+  trips.forEach((t,ti)=>{
+    t.stops.forEach(s=>{
+      const c=stationCoords[s.name];
+      rows.push([t.type,t.route,ti+1,t.days,s.name,
+        s.arrive?fmt(s.arrive):'',
+        s.depart?fmt(s.depart):'',
+        s.fare,
+        c?c.lat:'', c?c.lng:''].join(','));
+    });
+  });
+  const blob=new Blob(['\uFEFF',[header,...rows].join('\n')],{type:'text/csv'});
+  const a=document.createElement('a'); a.href=URL.createObjectURL(blob);
+  a.download='transit_data.csv'; a.click();
+}
+
+function downloadTemplate(){
+  const t=`type,route,trip_id,days,stop,arrive,depart,fare
+train,JR富良野線,1,weekday,美瑛駅,,10:37,0
+train,JR富良野線,1,weekday,千代ヶ岡駅,10:50,10:51,230
+train,JR富良野線,1,weekday,西神楽駅,11:02,11:03,440
+train,JR富良野線,1,weekday,旭川駅,11:11,,680
+train,JR富良野線,2,weekday,美瑛駅,,11:48,0
+train,JR富良野線,2,weekday,旭川駅,12:21,,680
+bus_dohoku,道北バス 66番,3,all,旭川駅前バス停,,8:10,0
+bus_dohoku,道北バス 66番,3,all,美瑛十字街,9:05,,580`;
+  const blob=new Blob(['\uFEFF'+t],{type:'text/csv'});
+  const a=document.createElement('a'); a.href=URL.createObjectURL(blob);
+  a.download='transit_template.csv'; a.click();
+}
+
+// ===================================================
+// 登録済み一覧
+// ===================================================
+const typeLabel={train:'🚃 電車',bus_dohoku:'🚌 道北バス',bus_furano:'🚌 富良野バス',bus_denki:'🚃 旭川電気軌道'};
+const typeBadge={train:'badge-train',bus_dohoku:'badge-dohoku',bus_furano:'badge-furano',bus_denki:'badge-denki'};
+const daysLabel={weekday:'平日',weekend:'土日祝',all:'毎日'};
+
+function renderRegistered(){
+  const el=document.getElementById('registered-routes');
+  document.getElementById('route-count').textContent=trips.length;
+
+  // datalist更新
+  const names=allStopNames();
+  document.getElementById('station-list').innerHTML=names.map(n=>`<option value="${n}">`).join('');
+
+  if(trips.length===0){
+    el.innerHTML='<div class="empty-state">まだデータがありません</div>';
+    renderGPSSettings(); return;
+  }
+
+  el.innerHTML=trips.map((t,i)=>{
+    const first=t.stops[0], last=t.stops[t.stops.length-1];
+    const dur=toMin(...(last.arrive||[0,0]))-toMin(...(first.depart||[0,0]));
+    const stopList=t.stops.length>2
+      ? `<span style="font-size:10px;color:#a0aec0">途中${t.stops.length-2}駅</span>`:'';
+    return `<div class="trip-card">
+      <div class="trip-card-header">
+        <span class="route-item-badge ${typeBadge[t.type]||'badge-train'}">${typeLabel[t.type]||t.type}</span>
+        <span class="trip-card-route">${t.route}</span>
+        <span class="day-pill">${daysLabel[t.days]||t.days}</span>
+      </div>
+      <div style="display:flex;align-items:center">
+        <div class="trip-card-times">
+          <span class="trip-depart">${fmt(first.depart)}</span>
+          <span class="trip-arrow">→</span>
+          <span class="trip-arrive">${fmt(last.arrive)}</span>
+          <span class="trip-dur">(${dur}分)</span>
+          ${stopList}
+          <span class="trip-card-seg">${first.name} → ${last.name}</span>
+        </div>
+        <div class="trip-actions">
+          <button class="edit-btn" onclick="editTrip(${i})" title="編集">✏️</button>
+          <button class="del-btn" onclick="deleteTrip(${i})" title="削除">🗑</button>
+        </div>
+      </div>
+    </div>`;
+  }).join('');
+
+  renderGPSSettings();
+}
+
+function deleteTrip(i){
+  const t=trips[i];
+  if(!confirm(`${t.route} ${fmt(t.stops[0].depart)} を削除しますか？`)) return;
+  trips.splice(i,1);
+  if(editIndex===i) cancelEdit(); else if(editIndex>i) editIndex--;
+  save(); renderRegistered(); renderTimetable();
 }
 
 // ===================================================
 // 時刻表レンダリング
 // ===================================================
-function pad(n){return String(n).padStart(2,'0')}
-function toMin(h,m){return h*60+m}
-function fmt(h,m){return pad(h)+':'+pad(m)}
-function isWeekend(d){return d.getDay()===0||d.getDay()===6}
+const headerClass={train:'train',bus_dohoku:'bus-dohoku',bus_furano:'bus-furano',bus_denki:'bus-denki'};
+const routeIcon={train:'🚃',bus_dohoku:'🚌',bus_furano:'🚌',bus_denki:'🚃'};
 
-const headerClass = { train:'train', bus_dohoku:'bus-dohoku', bus_furano:'bus-furano' };
-const routeIcon = { train:'🚃', bus_dohoku:'🚌', bus_furano:'🚌' };
+// 途中停留所の開閉状態（再描画をまたいで保持）
+const openStops=new Set();
+function toggleStops(id){
+  if(openStops.has(id)) openStops.delete(id); else openStops.add(id);
+  // アニメーションのため直接クラス操作（再描画なし）
+  const el=document.getElementById('stops-'+id);
+  if(el) el.classList.toggle('open', openStops.has(id));
+  // 矢印表示を更新
+  const hint=document.getElementById('hint-'+id);
+  if(hint) hint.textContent=openStops.has(id)?'▲':'▼';
+}
 
-function renderRoute(group, now) {
-  const nowMin = toMin(now.getHours(),now.getMinutes())+now.getSeconds()/60;
-  const todayIsWeekend = isWeekend(now);
-  const filtered = group.items.filter(r => {
-    if (r.days==='weekday' && todayIsWeekend) return false;
-    if (r.days==='weekend' && !todayIsWeekend) return false;
+function renderRoute(group, now){
+  const nowMin=toMin(now.getHours(),now.getMinutes())+now.getSeconds()/60;
+  const todayWE=isWeekend(now);
+
+  const filtered=group.items.filter(t=>{
+    if(t.days==='weekday'&&todayWE) return false;
+    if(t.days==='weekend'&&!todayWE) return false;
     return true;
   });
+  if(filtered.length===0) return '';
 
-  if (filtered.length===0) return '';
+  // 各tripのcurrentFromからの情報を取得
+  const getInfo=t=>{
+    const fromIdx=currentFrom ? t.stops.findIndex(s=>s.name===currentFrom) : 0;
+    if(fromIdx===-1) return null;
+    const fs=t.stops[fromIdx], ls=t.stops[t.stops.length-1];
+    if(!fs.depart) return null; // currentFromが終点
+    return {t, fromIdx, depart:fs.depart, arrive:ls.arrive,
+            fare:ls.fare-fs.fare, fromName:fs.name, toName:ls.name};
+  };
 
-  const upcoming = filtered.filter(r=>toMin(...r.depart)>=nowMin);
-  const passed   = filtered.filter(r=>toMin(...r.depart)<nowMin).slice(-1);
-  const display  = [...passed,...upcoming.slice(0,4)];
+  const infos=filtered.map(getInfo).filter(Boolean);
+  if(infos.length===0) return '';
+  infos.sort((a,b)=>toMin(...a.depart)-toMin(...b.depart));
+
+  const upcoming=infos.filter(i=>toMin(...i.depart)>=nowMin);
+  const passed  =infos.filter(i=>toMin(...i.depart)<nowMin).slice(-1);
+  const display =[...passed,...upcoming.slice(0,4)];
+  const refFare =(upcoming[0]||infos[0]).fare;
 
   let rows='';
-  if (upcoming.length===0) {
+  if(upcoming.length===0){
     rows='<div class="no-more">🌙 本日の運行は終了しました</div>';
   } else {
-    display.forEach(r=>{
-      const depMin=toMin(...r.depart);
-      const isPassed=depMin<nowMin;
+    display.forEach((info,rowIdx)=>{
+      const {t,fromIdx,depart,arrive,fare}=info;
+      const depMin=toMin(...depart), isPassed=depMin<nowMin;
       const isNext=!isPassed&&depMin===toMin(...upcoming[0].depart);
       const diffMin=depMin-nowMin;
-      const dur=toMin(...r.arrive)-depMin;
+      const dur=arrive?toMin(...arrive)-depMin:null;
+      const uniqueId=`${group.key}_${fmt(depart)}`; // 出発時刻ベースで安定したID
+
       let cd='';
       if(!isPassed){
         if(diffMin<1) cd='<span class="countdown soon">まもなく</span>';
         else if(isNext) cd=`<span class="countdown next-one">あと${Math.floor(diffMin)}分</span>`;
         else cd=`<span class="countdown later">${Math.floor(diffMin)}分後</span>`;
       }
-      rows+=`<div class="schedule-row${isPassed?' passed':''}${isNext?' next':''}">
-        <span class="depart-time">${fmt(...r.depart)}</span>
+
+      // 途中停留所リスト（fromIdx以降）
+      const stopsSlice=t.stops.slice(fromIdx);
+      const hasMiddle=stopsSlice.length>=2; // 2停留所でも展開表示を有効に
+      const stopsHtml=`<div class="stop-timeline">${stopsSlice.map((s,si)=>{
+        const isFirst=si===0, isLast=si===stopsSlice.length-1;
+        const dotClass=isFirst?'current':isLast?'last':'';
+        const timeStr=isFirst
+          ?(s.depart?`出発 ${fmt(s.depart)}`:'')
+          :(s.arrive?fmt(s.arrive):'──')+(s.depart&&!isLast&&fmt(s.arrive)!==fmt(s.depart)?` 発 ${fmt(s.depart)}`:'');
+        const fareStr=si>0?`¥${(s.fare-t.stops[fromIdx].fare).toLocaleString()}`:'';
+        return `<div class="stop-line-item">
+          <div class="stop-dot ${dotClass}"></div>
+          <span class="stop-name-txt${isFirst?' current':''}">${s.name}</span>
+          <span class="stop-time-txt">${timeStr}</span>
+          <span class="stop-fare-txt">${fareStr}</span>
+        </div>`;
+      }).join('')}</div>`;
+
+      const isOpen=openStops.has(uniqueId);
+      const hint=hasMiddle
+        ?`<span class="stops-toggle-hint" id="hint-${uniqueId}">${isOpen?'▲':'▼'}</span>`:'';
+
+      rows+=`<div class="schedule-row${isPassed?' passed':''}${isNext?' next':''}${hasMiddle?' has-stops':''}"
+        ${hasMiddle?`onclick="toggleStops('${uniqueId}')"`:''}>
+        <span class="depart-time">${fmt(depart)}</span>
         <span class="arrow">→</span>
-        <span class="arrive-time">${fmt(...r.arrive)}</span>
-        <span class="duration">(${dur}分)</span>
-        ${cd}
-      </div>`;
+        <span class="arrive-time">${fmt(arrive)}</span>
+        ${dur!==null?`<span class="duration">(${dur}分)</span>`:''}
+        ${cd}${hint}
+      </div>
+      <div id="stops-${uniqueId}" class="stops-popup${isOpen?' open':''}">${stopsHtml}</div>`;
     });
   }
 
-  const g=group;
-  const via=g.via?`<span style="font-size:10px;color:#a0aec0"> 経由:${g.via}</span>`:'';
   return `<div class="route-card">
-    <div class="route-header ${headerClass[g.type]||'train'}">
+    <div class="route-header ${headerClass[group.type]||'train'}">
       <div>
-        <div class="route-name ${headerClass[g.type]||'train'}">${routeIcon[g.type]||'🚃'} ${g.route}</div>
-        <div class="route-segment">${g.from} → ${g.to}${via}</div>
+        <div class="route-name ${headerClass[group.type]||'train'}">${routeIcon[group.type]||'🚃'} ${group.route}</div>
+        <div class="route-segment">${group.fromName} → ${group.toName}</div>
       </div>
-      <div class="fare-badge">¥${g.fare.toLocaleString()}</div>
+      <div class="fare-badge">¥${refFare.toLocaleString()}</div>
     </div>
     <div class="schedule-list">${rows}</div>
   </div>`;
 }
 
-function renderTimetable() {
-  const now = new Date();
-  const notices = document.getElementById('notice-area');
-  const toggleArea = document.getElementById('station-toggle-area');
-  const routeList = document.getElementById('route-list');
+function renderTimetable(){
+  const now=new Date();
+  const notices=document.getElementById('notice-area');
+  const toggleArea=document.getElementById('station-toggle-area');
+  const routeList=document.getElementById('route-list');
 
-  if (routes.length===0) {
-    notices.innerHTML='<div class="notice info">📝 「データ管理」タブからCSVをインポートしてください</div>';
-    toggleArea.innerHTML='';
-    routeList.innerHTML='';
-    return;
+  if(trips.length===0){
+    notices.innerHTML='<div class="notice info">📝 「データ管理」タブからデータを追加してください</div>';
+    toggleArea.innerHTML=''; routeList.innerHTML=''; return;
   }
 
-  // 土日警告
   let noticeHtml='';
-  if (isWeekend(now)) {
-    noticeHtml+='<div class="notice warning">⚠️ 今日は土日・祝日です。平日ダイヤは表示されません。</div>';
-  }
+  if(isWeekend(now)) noticeHtml+='<div class="notice warning">⚠️ 今日は土日・祝日です。平日ダイヤは表示されません。</div>';
 
-  // 出発地一覧を取得
-  const allFroms = [...new Set(routes.map(r=>r.from))];
-
-  // 出発地が未選択 or GPS未使用の場合は手動トグル表示
-  if (allFroms.length>1) {
-    if (!currentFrom) currentFrom=allFroms[0];
-    const buttons = allFroms.map(f=>
-      `<button class="toggle-btn${currentFrom===f?' active':''}" onclick="setFrom('${f}')">${f}</button>`
-    ).join('');
-    toggleArea.innerHTML=`<div class="station-toggle">${buttons}</div>`;
+  const allFroms=allStopNames();
+  if(allFroms.length>1){
+    if(!currentFrom) currentFrom=trips[0].stops[0].name;
+    const btns=allFroms.map(f=>`<button class="toggle-btn${currentFrom===f?' active':''}" onclick="setFrom('${f.replace(/'/g,"\\'")}')"> ${f}</button>`).join('');
+    toggleArea.innerHTML=`<div class="station-toggle">${btns}</div>`;
     noticeHtml+=`<div class="notice gps">📍 現在の出発地: <strong>${currentFrom}</strong></div>`;
   } else {
-    currentFrom=allFroms[0]||null;
-    toggleArea.innerHTML='';
+    currentFrom=allFroms[0]||null; toggleArea.innerHTML='';
   }
-
   notices.innerHTML=noticeHtml;
 
-  // 表示する路線を絞り込み（出発地でフィルタ）
-  const filtered = currentFrom
-    ? routes.filter(r=>r.from===currentFrom)
-    : routes;
-
-  // 路線ごとにグループ化
-  const groups={};
-  filtered.forEach(r=>{
-    const key=`${r.type}||${r.route}||${r.from}||${r.to}`;
-    if(!groups[key]) groups[key]={...r,items:[]};
-    groups[key].items.push(r);
+  // currentFromを通る便を、路線ごとにグループ化
+  const relevant=currentFrom ? trips.filter(t=>t.stops.some(s=>s.name===currentFrom)) : trips;
+  const groups=new Map();
+  relevant.forEach(t=>{
+    const last=t.stops[t.stops.length-1];
+    // fromの情報を取得
+    const fromIdx=currentFrom?t.stops.findIndex(s=>s.name===currentFrom):0;
+    const fromStop=t.stops[fromIdx>=0?fromIdx:0];
+    const key=`${t.type}||${t.route}||${fromStop.name}||${last.name}`;
+    if(!groups.has(key)) groups.set(key,{key,type:t.type,route:t.route,fromName:fromStop.name,toName:last.name,items:[]});
+    groups.get(key).items.push(t);
   });
 
-  routeList.innerHTML=Object.values(groups).map(g=>renderRoute(g,now)).join('');
+  routeList.innerHTML=[...groups.values()].map(g=>renderRoute(g,now)).join('');
 }
 
-function setFrom(name) {
+function setFrom(name){
   currentFrom=name;
   document.getElementById('gps-btn').textContent='📍 GPS';
+  document.getElementById('gps-btn').classList.remove('gps-on');
   renderTimetable();
 }
 
 // ===================================================
 // タブ切替
 // ===================================================
-function switchTab(name) {
+function switchTab(name){
   document.querySelectorAll('.tab').forEach((t,i)=>t.classList.toggle('active',['timetable','data'][i]===name));
   document.querySelectorAll('.pane').forEach(p=>p.classList.remove('active'));
   document.getElementById('pane-'+name).classList.add('active');
-  if(name==='data') renderRegistered();
+  if(name==='data'){ renderSheetSettings(); renderRegistered(); }
+}
+
+function switchSubTab(name){
+  document.querySelectorAll('.subtab').forEach((t,i)=>t.classList.toggle('active',['form','csv'][i]===name));
+  document.querySelectorAll('.subpane').forEach(p=>p.classList.remove('active'));
+  document.getElementById('subpane-'+name).classList.add('active');
 }
 
 // ===================================================
-// 時計更新
+// 時計
 // ===================================================
 const weekDayNames=['日','月','火','水','木','金','土'];
-function updateClock() {
+function updateClock(){
   const now=new Date();
   document.getElementById('clock').textContent=`${pad(now.getHours())}:${pad(now.getMinutes())}:${pad(now.getSeconds())}`;
-  const wd=weekDayNames[now.getDay()];
-  document.getElementById('date-label').textContent=`${now.getFullYear()}年${now.getMonth()+1}月${now.getDate()}日（${wd}）`;
+  document.getElementById('date-label').textContent=`${now.getFullYear()}年${now.getMonth()+1}月${now.getDate()}日（${weekDayNames[now.getDay()]}）`;
   renderTimetable();
 }
 
@@ -562,13 +1112,14 @@ function updateClock() {
 // 初期化
 // ===================================================
 load();
+loadCoords();
+resetForm();
+renderSheetSettings();
 updateClock();
 setInterval(updateClock,1000);
-
-// file://プロトコルではGPSボタンを非表示
-if (location.protocol === 'file:') {
-  document.getElementById('gps-btn').style.display = 'none';
-}
+setTimeout(autoGPS,800);
+// 起動時にスプレッドシートから自動取得
+setTimeout(()=>loadFromSheet(false),1000);
 </script>
 </body>
 </html>
