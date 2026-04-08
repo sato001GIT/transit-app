@@ -36,7 +36,7 @@
     .route-name.bus-dohoku{color:#1a4f7a}
     .route-name.bus-furano{color:#553c9a}
     .route-name.bus-denki{color:#9b2c2c}
-    .route-segment{font-size:11px;color:#718096;margin-top:1px}
+    .route-segment{font-size:13px;color:#2d3748;margin-top:2px;font-weight:600;letter-spacing:.03em}
     .fare-badge{background:#edf2f7;color:#4a5568;font-size:12px;font-weight:600;padding:3px 9px;border-radius:999px;white-space:nowrap}
     .schedule-list{padding:0 4px 6px}
     .schedule-row{display:flex;align-items:center;padding:8px 10px;border-radius:9px;margin:2px 3px;cursor:pointer}
@@ -88,6 +88,11 @@
     .notice.warning{background:#fffbeb;border:1px solid #f6e05e;color:#744210}
     .notice.info{background:#ebf8ff;border:1px solid #bee3f8;color:#2c5282}
     .notice.gps{background:#f0fff4;border:1px solid #9ae6b4;color:#276749}
+
+    /* 表示切替トグル */
+    .view-toggle{display:flex;background:#edf2f7;border-radius:10px;padding:3px;margin-bottom:12px;gap:3px}
+    .view-toggle-btn{flex:1;padding:8px 6px;text-align:center;font-size:12px;font-weight:600;color:#718096;cursor:pointer;border-radius:8px;transition:.15s;border:none;background:none;-webkit-tap-highlight-color:transparent}
+    .view-toggle-btn.active{background:white;color:#2b6cb0;box-shadow:0 1px 4px rgba(0,0,0,.1)}
 
     .station-toggle{display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap}
     .toggle-btn{flex:1;min-width:90px;padding:12px 8px;border-radius:12px;border:2px solid #e2e8f0;background:white;font-size:14px;font-weight:700;cursor:pointer;color:#718096;transition:.15s;-webkit-tap-highlight-color:transparent}
@@ -199,6 +204,10 @@
 <div class="pane active" id="pane-timetable">
   <div id="notice-area"></div>
   <div id="station-toggle-area"></div>
+  <div class="view-toggle" id="view-toggle">
+    <button class="view-toggle-btn active" onclick="setViewMode('next')">🕐 直近</button>
+    <button class="view-toggle-btn" onclick="setViewMode('all')">📋 全便</button>
+  </div>
   <div id="route-list"></div>
   <div style="text-align:center;font-size:11px;color:#a0aec0;padding:12px 0">毎秒自動更新 / 行をタップで途中停留所を表示</div>
 </div>
@@ -340,6 +349,7 @@ let stationCoords = {};
 let fareTable = {};
 let currentFrom = null;
 let editIndex = -1;
+let viewMode = 'next'; // 'next' = 直近表示, 'all' = 全便表示
 
 // ---- 停留所エディタの状態 ----
 // [{name, arrive, depart, fare}]  (arrive/depart は "HH:MM" 文字列 or "")
@@ -1005,8 +1015,13 @@ function renderRoute(group, now){
   infos.sort((a,b)=>toMin(...a.depart)-toMin(...b.depart));
 
   const upcoming=infos.filter(i=>toMin(...i.depart)>=nowMin);
-  const passed  =infos.filter(i=>toMin(...i.depart)<nowMin).slice(-1);
-  const display =[...passed,...upcoming.slice(0,4)];
+  const passed  =infos.filter(i=>toMin(...i.depart)<nowMin);
+  let display;
+  if(viewMode==='all'){
+    display=infos; // 全便表示
+  } else {
+    display=[...passed.slice(-1),...upcoming.slice(0,4)]; // 直近表示
+  }
   const refFare =(upcoming[0]||infos[0]).fare;
 
   let rows='';
@@ -1113,6 +1128,14 @@ function renderTimetable(){
   });
 
   routeList.innerHTML=[...groups.values()].map(g=>renderRoute(g,now)).join('');
+}
+
+function setViewMode(mode){
+  viewMode=mode;
+  document.querySelectorAll('.view-toggle-btn').forEach((b,i)=>
+    b.classList.toggle('active',['next','all'][i]===mode)
+  );
+  renderTimetable();
 }
 
 function setFrom(name){
