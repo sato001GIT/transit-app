@@ -180,15 +180,15 @@
 <body>
 
 <header>
-  <div class="header-top">
+  <h1>🚌🚃 ちえみの乗りもの時刻表</h1>
+  <div class="header-top" style="margin-top:4px">
     <div>
-      <h1>🚌🚃 ちえみの乗りもの時刻表</h1>
       <div id="clock">--:--:--</div>
       <div id="date-label"></div>
     </div>
-    <div style="display:flex;flex-direction:column;gap:6px;align-items:flex-end">
+    <div style="display:flex;gap:6px;align-items:center">
+      <button id="reload-btn" onclick="loadFromSheet(true)" style="background:rgba(255,255,255,.2);border:1px solid rgba(255,255,255,.5);color:white;border-radius:8px;padding:6px 10px;font-size:12px;cursor:pointer;white-space:nowrap">🔄 更新</button>
       <button id="gps-btn" onclick="requestGPS()">📍 GPS</button>
-      <button id="reload-btn" onclick="loadFromSheet(true)" style="background:rgba(255,255,255,.2);border:1px solid rgba(255,255,255,.5);color:white;border-radius:8px;padding:5px 10px;font-size:11px;cursor:pointer;white-space:nowrap">🔄 更新</button>
     </div>
   </div>
   <div id="sheet-status-bar" style="font-size:10px;opacity:.75;margin-top:4px;min-height:14px"></div>
