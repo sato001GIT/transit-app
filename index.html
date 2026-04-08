@@ -186,139 +186,20 @@
       <div id="clock">--:--:--</div>
       <div id="date-label"></div>
     </div>
-    <button id="gps-btn" onclick="requestGPS()">📍 GPS</button>
+    <div style="display:flex;flex-direction:column;gap:6px;align-items:flex-end">
+      <button id="gps-btn" onclick="requestGPS()">📍 GPS</button>
+      <button id="reload-btn" onclick="loadFromSheet(true)" style="background:rgba(255,255,255,.2);border:1px solid rgba(255,255,255,.5);color:white;border-radius:8px;padding:5px 10px;font-size:11px;cursor:pointer;white-space:nowrap">🔄 更新</button>
+    </div>
   </div>
+  <div id="sheet-status-bar" style="font-size:10px;opacity:.75;margin-top:4px;min-height:14px"></div>
 </header>
 
-<div class="tab-bar">
-  <div class="tab active" onclick="switchTab('timetable')">🕐 時刻表</div>
-  <div class="tab" onclick="switchTab('data')">📝 データ管理</div>
-</div>
-
-<!-- 時刻表タブ -->
-<div class="pane active" id="pane-timetable">
+<!-- 時刻表 -->
+<div style="padding:12px;max-width:520px;margin:0 auto;padding-bottom:80px">
   <div id="notice-area"></div>
   <div id="station-toggle-area"></div>
   <div id="route-list"></div>
   <div style="text-align:center;font-size:11px;color:#a0aec0;padding:12px 0">毎秒自動更新 / 行をタップで途中停留所を表示</div>
-</div>
-
-<!-- データ管理タブ -->
-<div class="pane" id="pane-data">
-
-  <!-- Googleスプレッドシート設定 -->
-  <div class="section-label" style="margin-top:4px">☁️ Googleスプレッドシート連携</div>
-  <div class="card" id="sheet-settings-body"></div>
-
-  <div class="subtab-bar">
-    <div class="subtab active" onclick="switchSubTab('form')">✏️ 個別入力・編集</div>
-    <div class="subtab" onclick="switchSubTab('csv')">📄 CSV一括入力</div>
-  </div>
-
-  <!-- 個別入力 -->
-  <div class="subpane active" id="subpane-form">
-    <div class="card">
-      <div id="edit-banner" class="edit-banner" style="display:none"></div>
-      <div class="form-grid" style="margin-bottom:10px">
-        <div class="form-group">
-          <label class="form-label">種別</label>
-          <select id="f-type" class="form-control">
-            <option value="train">🚃 電車</option>
-            <option value="bus_dohoku">🚌 道北バス</option>
-            <option value="bus_furano">🚌 富良野バス</option>
-            <option value="bus_denki">🚃 旭川電気軌道</option>
-          </select>
-        </div>
-        <div class="form-group">
-          <label class="form-label">運行日</label>
-          <select id="f-days" class="form-control">
-            <option value="weekday">平日のみ</option>
-            <option value="weekend">土日祝のみ</option>
-            <option value="all">毎日</option>
-          </select>
-        </div>
-        <div class="form-group span-2">
-          <label class="form-label">路線名</label>
-          <input type="text" id="f-route" class="form-control" placeholder="例: JR富良野線">
-        </div>
-      </div>
-
-      <div class="form-label" style="margin-bottom:6px">停留所リスト（上から順に入力）</div>
-      <div id="stops-editor"></div>
-      <button class="add-stop-btn" onclick="addStop()">＋ 途中停留所を追加</button>
-
-      <datalist id="station-list"></datalist>
-      <div id="form-result" class="parse-result"></div>
-      <div class="btn-row">
-        <button id="form-submit-btn" class="btn btn-primary" onclick="submitForm()">✅ 追加する</button>
-        <button id="form-cancel-btn" class="btn btn-secondary" onclick="cancelEdit()" style="display:none">✕ キャンセル</button>
-      </div>
-    </div>
-  </div>
-
-  <!-- CSV一括 -->
-  <div class="subpane" id="subpane-csv">
-    <div class="section-label" style="margin-top:4px">📋 CSV書式（v2: 1停留所1行）</div>
-    <div class="card">
-      <div style="font-size:12px;color:#4a5568;line-height:1.6">
-        同じ <code style="background:#f7fafc;padding:1px 4px;border-radius:3px;font-size:10px;color:#c53030">trip_id</code> の行が1便としてまとめられます。到着なし＝始発、出発なし＝終点。運賃は出発地からの累計。
-      </div>
-      <table class="format-table" style="margin-top:8px">
-        <tr><th>列名</th><th>内容</th><th>例</th></tr>
-        <tr><td><code>type</code></td><td>種別</td><td>train / bus_dohoku / bus_furano</td></tr>
-        <tr><td><code>route</code></td><td>路線名</td><td>JR富良野線</td></tr>
-        <tr><td><code>trip_id</code></td><td>便ID（同じ便は同じ番号）</td><td>1</td></tr>
-        <tr><td><code>days</code></td><td>運行日</td><td>weekday / weekend / all</td></tr>
-        <tr><td><code>stop</code></td><td>駅・停留所名</td><td>美瑛駅</td></tr>
-        <tr><td><code>arrive</code></td><td>到着時刻（始発は空欄）</td><td>10:50</td></tr>
-        <tr><td><code>depart</code></td><td>出発時刻（終点は空欄）</td><td>10:37</td></tr>
-        <tr><td><code>fare</code></td><td>出発地からの累計運賃</td><td>0 / 230 / 680</td></tr>
-      </table>
-      <div class="example-box">type,route,trip_id,days,stop,arrive,depart,fare
-train,JR富良野線,1,weekday,美瑛駅,,10:37,0
-train,JR富良野線,1,weekday,千代ヶ岡駅,10:50,10:51,230
-train,JR富良野線,1,weekday,西神楽駅,11:02,11:03,440
-train,JR富良野線,1,weekday,旭川駅,11:11,,680
-train,JR富良野線,2,weekday,美瑛駅,,11:48,0
-train,JR富良野線,2,weekday,旭川駅,12:21,,680</div>
-    </div>
-
-    <div class="section-label">📥 CSV貼り付け・インポート</div>
-    <div class="card">
-      <textarea id="csv-input" placeholder="ここにCSVを貼り付けてください…"></textarea>
-      <div id="parse-result" class="parse-result"></div>
-      <div class="btn-row">
-        <button class="btn btn-primary" onclick="importCSV()">✅ インポート</button>
-        <button class="btn btn-secondary" onclick="downloadTemplate()">📄 テンプレDL</button>
-      </div>
-    </div>
-  </div>
-
-  <!-- 登録済み路線 -->
-  <div class="section-label">
-    <span>🗂 登録済み（<span id="route-count">0</span>便）</span>
-    <button class="btn btn-secondary btn-sm" onclick="exportCSV()">💾 CSV出力</button>
-  </div>
-  <div class="card" id="registered-routes">
-    <div class="empty-state">まだデータがありません</div>
-  </div>
-
-  <!-- GPS位置情報設定 -->
-  <div class="section-label">📍 GPS 位置情報設定</div>
-  <div class="card">
-    <div style="font-size:12px;color:#4a5568;line-height:1.6;margin-bottom:10px">
-      各駅・停留所の座標をOpenStreetMapから自動取得、または手動入力できます。
-    </div>
-    <div id="gps-settings-list"><div class="empty-state" style="padding:10px">路線データを登録すると表示されます</div></div>
-    <div class="btn-row">
-      <button class="btn btn-primary" onclick="geocodeAllMissing()">🔍 未登録をまとめて取得</button>
-    </div>
-    <div id="geocode-status" style="margin-top:8px;font-size:12px;color:#718096;display:none"></div>
-  </div>
-
-  <div style="text-align:center;font-size:11px;color:#a0aec0;padding:12px 0 8px">
-    データはこのデバイスのブラウザに保存されます
-  </div>
 </div>
 
 <script>
@@ -568,153 +449,6 @@ function renderGPSSettings(){
 }
 
 // ===================================================
-// 停留所エディタ
-// ===================================================
-function renderStopsEditor(){
-  const n=formStops.length;
-  document.getElementById('stops-editor').innerHTML=formStops.map((s,i)=>{
-    const isFirst=i===0, isLast=i===n-1;
-    const canDel=n>2;
-    return `<div class="stop-editor-row">
-      <div class="stop-num-badge${isLast?' last':''}">${i+1}</div>
-      <div class="stop-editor-content">
-        <div style="display:flex;gap:6px;align-items:center">
-          <input type="text" class="form-control stop-name" list="station-list"
-            placeholder="${isFirst?'出発駅・停留所':isLast?'終着駅・停留所':'途中駅・停留所'}"
-            value="${s.name}" autocomplete="off">
-        </div>
-        <div class="stop-time-grid">
-          <div class="form-group">
-            <label class="form-label">到着</label>
-            <input type="time" class="form-control stop-arrive" value="${s.arrive}" ${isFirst?'disabled':''}>
-          </div>
-          <div class="form-group">
-            <label class="form-label">出発</label>
-            <input type="time" class="form-control stop-depart" value="${s.depart}" ${isLast?'disabled':''}>
-          </div>
-          <div class="form-group">
-            <label class="form-label">累計運賃(¥)</label>
-            <input type="number" class="form-control stop-fare" value="${s.fare}" min="0"
-              inputmode="numeric" ${isFirst?'disabled':''} placeholder="0">
-          </div>
-        </div>
-      </div>
-      ${canDel?`<button class="stop-del-btn" onclick="removeStop(${i})">🗑</button>`:'<div style="width:28px"></div>'}
-    </div>`;
-  }).join('');
-}
-
-function syncFormStops(){
-  const rows=document.querySelectorAll('#stops-editor .stop-editor-row');
-  formStops=[...rows].map(row=>({
-    name:  row.querySelector('.stop-name').value,
-    arrive:row.querySelector('.stop-arrive').value,
-    depart:row.querySelector('.stop-depart').value,
-    fare:  row.querySelector('.stop-fare').value
-  }));
-}
-
-function addStop(){
-  syncFormStops();
-  formStops.splice(formStops.length-1,0,{name:'',arrive:'',depart:'',fare:''});
-  renderStopsEditor();
-}
-
-function removeStop(idx){
-  syncFormStops();
-  if(formStops.length<=2) return;
-  formStops.splice(idx,1);
-  renderStopsEditor();
-}
-
-function getStopsData(){
-  syncFormStops();
-  const n=formStops.length;
-  return formStops.map((s,i)=>({
-    name:   s.name.trim(),
-    arrive: i===0 ? null : parseTime(s.arrive),
-    depart: i===n-1 ? null : parseTime(s.depart),
-    fare:   i===0 ? 0 : (parseInt(s.fare,10)||0)
-  }));
-}
-
-function resetForm(){
-  formStops=[{name:'',arrive:'',depart:'',fare:'0'},{name:'',arrive:'',depart:'',fare:''}];
-  document.getElementById('f-type').value='train';
-  document.getElementById('f-route').value='';
-  document.getElementById('f-days').value='weekday';
-  renderStopsEditor();
-}
-
-// ===================================================
-// 個別入力フォーム 送信・編集
-// ===================================================
-function submitForm(){
-  const type  =document.getElementById('f-type').value;
-  const route =document.getElementById('f-route').value.trim();
-  const days  =document.getElementById('f-days').value;
-  const stops =getStopsData();
-
-  if(!route){ showFormMsg('❌ 路線名を入力してください',true); return; }
-  if(stops.some(s=>!s.name)){ showFormMsg('❌ すべての駅・停留所名を入力してください',true); return; }
-  if(!stops[0].depart){ showFormMsg('❌ 始発の出発時刻を入力してください',true); return; }
-  if(!stops[stops.length-1].arrive){ showFormMsg('❌ 終点の到着時刻を入力してください',true); return; }
-
-  const entry={type,route,days,stops};
-
-  if(editIndex>=0){
-    trips[editIndex]=entry;
-    showFormMsg(`✅ ${route} を更新しました`);
-    editIndex=-1;
-    document.getElementById('edit-banner').style.display='none';
-    document.getElementById('form-submit-btn').textContent='✅ 追加する';
-    document.getElementById('form-cancel-btn').style.display='none';
-  } else {
-    trips.push(entry);
-    showFormMsg(`✅ ${route} を追加しました`);
-  }
-  save(); resetForm(); renderRegistered(); renderTimetable();
-  geocodeAllMissing();
-}
-
-function editTrip(index){
-  const t=trips[index];
-  document.getElementById('f-type').value =t.type;
-  document.getElementById('f-route').value=t.route;
-  document.getElementById('f-days').value =t.days;
-  formStops=t.stops.map(s=>({
-    name:   s.name,
-    arrive: s.arrive ? pad(s.arrive[0])+':'+pad(s.arrive[1]) : '',
-    depart: s.depart ? pad(s.depart[0])+':'+pad(s.depart[1]) : '',
-    fare:   String(s.fare)
-  }));
-  renderStopsEditor();
-  editIndex=index;
-  const first=t.stops[0], last=t.stops[t.stops.length-1];
-  const banner=document.getElementById('edit-banner');
-  banner.innerHTML=`✏️ 編集中: ${t.route}　${fmt(first.depart)} → ${fmt(last.arrive)}`;
-  banner.style.display='flex';
-  document.getElementById('form-submit-btn').textContent='💾 更新する';
-  document.getElementById('form-cancel-btn').style.display='';
-  switchTab('data'); switchSubTab('form');
-  document.getElementById('subpane-form').scrollIntoView({behavior:'smooth',block:'start'});
-  document.getElementById('form-result').style.display='none';
-}
-
-function cancelEdit(){
-  editIndex=-1; resetForm();
-  document.getElementById('edit-banner').style.display='none';
-  document.getElementById('form-submit-btn').textContent='✅ 追加する';
-  document.getElementById('form-cancel-btn').style.display='none';
-  document.getElementById('form-result').style.display='none';
-}
-
-function showFormMsg(msg,isErr){
-  const el=document.getElementById('form-result');
-  el.className='parse-result'+(isErr?' parse-error':'');
-  el.textContent=msg; el.style.display='block';
-  if(!isErr) setTimeout(()=>el.style.display='none',3000);
-}
 
 // ===================================================
 // CSV パーサー（1停留所1行形式）
@@ -798,169 +532,32 @@ function applyParsed({trips:parsed, coords, fares={}}){
   return {added, updated};
 }
 
-function importCSV(){
-  const text=document.getElementById('csv-input').value;
-  const res=document.getElementById('parse-result');
-  try{
-    const {added,updated}=applyParsed(parseCSV(text));
-    res.className='parse-result'; res.style.display='block';
-    res.textContent=`✅ 新規追加 ${added}便 ／ 上書き更新 ${updated}便（合計 ${trips.length}便）`;
-    document.getElementById('csv-input').value='';
-    renderRegistered(); renderTimetable(); renderGPSSettings();
-  }catch(e){
-    res.className='parse-result parse-error'; res.style.display='block';
-    res.textContent=`❌ エラー: ${e.message}`;
-  }
-}
-
 // ===================================================
 // Googleスプレッドシート連携
 // ===================================================
 async function loadFromSheet(showMsg=true){
   const url=localStorage.getItem(SHEET_URL_KEY)||DEFAULT_SHEET_URL;
   if(!url) return;
-  const el=document.getElementById('sheet-status');
-  if(el){ el.innerHTML='<span class="spin"></span>読み込み中…'; el.style.display='block'; }
+  const bar=document.getElementById('sheet-status-bar');
+  const btn=document.getElementById('reload-btn');
+  if(bar) bar.innerHTML='<span class="spin"></span> 読み込み中…';
+  if(btn) btn.disabled=true;
   try{
     const res=await fetch(url);
     if(!res.ok) throw new Error(`HTTP ${res.status}`);
     const text=await res.text();
     const parsed=parseCSV(text);
-    // スプレッドシートの内容で完全に入れ替え
-    trips=[];
-    fareTable={};
+    trips=[]; fareTable={};
     const {added,updated}=applyParsed(parsed);
-    const ts=new Date().toLocaleString('ja-JP');
+    const ts=new Date().toLocaleTimeString('ja-JP',{hour:'2-digit',minute:'2-digit'});
     localStorage.setItem(SHEET_TS_KEY, ts);
-    if(el){ el.textContent=`✅ 更新完了（${added+updated}件読み込み）　${ts}`; }
-    renderRegistered(); renderTimetable(); renderGPSSettings();
+    if(bar) bar.textContent=`✅ ${added+updated}便 読み込み済（${ts}）`;
+    renderTimetable(); geocodeAllMissing();
   }catch(e){
-    if(el){ el.className='parse-result parse-error'; el.style.display='block';
-            el.textContent=`❌ 読み込み失敗: ${e.message}`; }
+    if(bar) bar.textContent=`❌ 読み込み失敗: ${e.message}`;
+  } finally {
+    if(btn) btn.disabled=false;
   }
-}
-
-function saveSheetUrl(){
-  const url=document.getElementById('sheet-url-input').value.trim();
-  localStorage.setItem(SHEET_URL_KEY, url);
-  renderSheetSettings();
-  if(url) loadFromSheet();
-}
-
-function renderSheetSettings(){
-  const url=localStorage.getItem(SHEET_URL_KEY)||'';
-  const ts =localStorage.getItem(SHEET_TS_KEY)||'未取得';
-  const el=document.getElementById('sheet-settings-body');
-  if(!el) return;
-  el.innerHTML=`
-    <div style="font-size:12px;color:#4a5568;margin-bottom:8px">
-      スプレッドシートを「ウェブに公開（CSV形式）」したURLを入力してください。<br>
-      起動時に自動取得し、スプレッドシートを編集するだけで全員に反映されます。
-    </div>
-    <input type="url" id="sheet-url-input" class="form-control"
-      placeholder="https://docs.google.com/spreadsheets/..."
-      value="${url}" style="font-size:11px;margin-bottom:8px">
-    <div id="sheet-status" class="parse-result" style="${url?'display:block':'display:none'}">
-      最終取得: ${ts}
-    </div>
-    <div class="btn-row">
-      <button class="btn btn-primary" onclick="saveSheetUrl()">💾 保存して読み込む</button>
-      ${url?`<button class="btn btn-secondary" onclick="loadFromSheet()">🔄 今すぐ更新</button>`:''}
-    </div>`;
-}
-
-function exportCSV(){
-  const header='type,route,trip_id,days,stop,arrive,depart,fare,lat,lng';
-  const rows=[];
-  trips.forEach((t,ti)=>{
-    t.stops.forEach(s=>{
-      const c=stationCoords[s.name];
-      rows.push([t.type,t.route,ti+1,t.days,s.name,
-        s.arrive?fmt(s.arrive):'',
-        s.depart?fmt(s.depart):'',
-        s.fare,
-        c?c.lat:'', c?c.lng:''].join(','));
-    });
-  });
-  const blob=new Blob(['\uFEFF',[header,...rows].join('\n')],{type:'text/csv'});
-  const a=document.createElement('a'); a.href=URL.createObjectURL(blob);
-  a.download='transit_data.csv'; a.click();
-}
-
-function downloadTemplate(){
-  const t=`type,route,trip_id,days,stop,arrive,depart,fare,lat,lng,from_stop,to_stop
-train,JR富良野線,1,weekday,美瑛駅,,10:37,0,43.59098,142.4619,,
-train,JR富良野線,1,weekday,千代ヶ岡駅,10:50,10:51,230,,,,
-train,JR富良野線,1,weekday,西神楽駅,11:02,11:03,440,,,,
-train,JR富良野線,1,weekday,旭川駅,11:11,,680,,,,
-bus_dohoku,道北バス 66番,3,all,旭川駅前バス停,,8:10,0,,,,
-bus_dohoku,道北バス 66番,3,all,神楽岡14条6丁目,8:30,8:31,250,,,,
-bus_dohoku,道北バス 66番,3,all,美瑛十字街,9:05,,580,,,,
-fare,道北バス 66番,,,,,,250,,,旭川駅前バス停,神楽岡14条6丁目
-fare,道北バス 66番,,,,,,580,,,旭川駅前バス停,美瑛十字街
-fare,道北バス 66番,,,,,,550,,,神楽岡14条6丁目,美瑛十字街`;
-  const blob=new Blob(['\uFEFF'+t],{type:'text/csv'});
-  const a=document.createElement('a'); a.href=URL.createObjectURL(blob);
-  a.download='transit_template.csv'; a.click();
-}
-
-// ===================================================
-// 登録済み一覧
-// ===================================================
-const typeLabel={train:'🚃 電車',bus_dohoku:'🚌 道北バス',bus_furano:'🚌 富良野バス',bus_denki:'🚃 旭川電気軌道'};
-const typeBadge={train:'badge-train',bus_dohoku:'badge-dohoku',bus_furano:'badge-furano',bus_denki:'badge-denki'};
-const daysLabel={weekday:'平日',weekend:'土日祝',all:'毎日'};
-
-function renderRegistered(){
-  const el=document.getElementById('registered-routes');
-  document.getElementById('route-count').textContent=trips.length;
-
-  // datalist更新
-  const names=allStopNames();
-  document.getElementById('station-list').innerHTML=names.map(n=>`<option value="${n}">`).join('');
-
-  if(trips.length===0){
-    el.innerHTML='<div class="empty-state">まだデータがありません</div>';
-    renderGPSSettings(); return;
-  }
-
-  el.innerHTML=trips.map((t,i)=>{
-    const first=t.stops[0], last=t.stops[t.stops.length-1];
-    const dur=toMin(...(last.arrive||[0,0]))-toMin(...(first.depart||[0,0]));
-    const stopList=t.stops.length>2
-      ? `<span style="font-size:10px;color:#a0aec0">途中${t.stops.length-2}駅</span>`:'';
-    return `<div class="trip-card">
-      <div class="trip-card-header">
-        <span class="route-item-badge ${typeBadge[t.type]||'badge-train'}">${typeLabel[t.type]||t.type}</span>
-        <span class="trip-card-route">${t.route}</span>
-        <span class="day-pill">${daysLabel[t.days]||t.days}</span>
-      </div>
-      <div style="display:flex;align-items:center">
-        <div class="trip-card-times">
-          <span class="trip-depart">${fmt(first.depart)}</span>
-          <span class="trip-arrow">→</span>
-          <span class="trip-arrive">${fmt(last.arrive)}</span>
-          <span class="trip-dur">(${dur}分)</span>
-          ${stopList}
-          <span class="trip-card-seg">${first.name} → ${last.name}</span>
-        </div>
-        <div class="trip-actions">
-          <button class="edit-btn" onclick="editTrip(${i})" title="編集">✏️</button>
-          <button class="del-btn" onclick="deleteTrip(${i})" title="削除">🗑</button>
-        </div>
-      </div>
-    </div>`;
-  }).join('');
-
-  renderGPSSettings();
-}
-
-function deleteTrip(i){
-  const t=trips[i];
-  if(!confirm(`${t.route} ${fmt(t.stops[0].depart)} を削除しますか？`)) return;
-  trips.splice(i,1);
-  if(editIndex===i) cancelEdit(); else if(editIndex>i) editIndex--;
-  save(); renderRegistered(); renderTimetable();
 }
 
 // ===================================================
@@ -1124,21 +721,6 @@ function setFrom(name){
   renderTimetable();
 }
 
-// ===================================================
-// タブ切替
-// ===================================================
-function switchTab(name){
-  document.querySelectorAll('.tab').forEach((t,i)=>t.classList.toggle('active',['timetable','data'][i]===name));
-  document.querySelectorAll('.pane').forEach(p=>p.classList.remove('active'));
-  document.getElementById('pane-'+name).classList.add('active');
-  if(name==='data'){ renderSheetSettings(); renderRegistered(); }
-}
-
-function switchSubTab(name){
-  document.querySelectorAll('.subtab').forEach((t,i)=>t.classList.toggle('active',['form','csv'][i]===name));
-  document.querySelectorAll('.subpane').forEach(p=>p.classList.remove('active'));
-  document.getElementById('subpane-'+name).classList.add('active');
-}
 
 // ===================================================
 // 時計
@@ -1157,8 +739,6 @@ function updateClock(){
 load();
 loadCoords();
 loadFareTable();
-resetForm();
-renderSheetSettings();
 updateClock();
 setInterval(updateClock,1000);
 setTimeout(autoGPS,800);
