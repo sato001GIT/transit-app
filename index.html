@@ -825,12 +825,14 @@ async function loadFromSheet(showMsg=true){
     const res=await fetch(url);
     if(!res.ok) throw new Error(`HTTP ${res.status}`);
     const text=await res.text();
-    // デバッグ: 取得テキストの先頭を確認
-    console.log('CSV先頭100文字:', JSON.stringify(text.slice(0,100)));
-    const {added,updated}=applyParsed(parseCSV(text));
+    const parsed=parseCSV(text);
+    // スプレッドシートの内容で完全に入れ替え
+    trips=[];
+    fareTable={};
+    const {added,updated}=applyParsed(parsed);
     const ts=new Date().toLocaleString('ja-JP');
     localStorage.setItem(SHEET_TS_KEY, ts);
-    if(el){ el.textContent=`✅ 更新完了（${added}件追加・${updated}件更新）　${ts}`; }
+    if(el){ el.textContent=`✅ 更新完了（${added+updated}件読み込み）　${ts}`; }
     renderRegistered(); renderTimetable(); renderGPSSettings();
   }catch(e){
     if(el){ el.className='parse-result parse-error'; el.style.display='block';
