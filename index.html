@@ -1025,9 +1025,13 @@ function renderRoute(group, now){
   const refFare =(upcoming[0]||infos[0]).fare;
 
   let rows='';
-  if(upcoming.length===0){
+  if(upcoming.length===0 && viewMode==='next'){
     rows='<div class="no-more">🌙 本日の運行は終了しました</div>';
   } else {
+    if(upcoming.length===0 && viewMode==='all'){
+      display=infos; // 全便終了後でも全便表示
+      rows='<div class="no-more" style="padding:8px;font-size:11px">🌙 本日の運行は終了しています</div>';
+    }
     display.forEach((info,rowIdx)=>{
       const {t,fromIdx,depart,arrive,fare}=info;
       const depMin=toMin(...depart), isPassed=depMin<nowMin;
