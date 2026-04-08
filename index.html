@@ -583,9 +583,10 @@ function renderRoute(group, now){
 
       let cd='';
       if(!isPassed){
+        const fmtDiff=m=>{const h=Math.floor(m/60),min=Math.floor(m%60);return h>0?`${h}時間${min}分`:`${min}分`;};
         if(diffMin<1) cd='<span class="countdown soon">まもなく</span>';
-        else if(isNext) cd=`<span class="countdown next-one">あと${Math.floor(diffMin)}分</span>`;
-        else cd=`<span class="countdown later">${Math.floor(diffMin)}分後</span>`;
+        else if(isNext) cd=`<span class="countdown next-one">あと${fmtDiff(diffMin)}</span>`;
+        else cd=`<span class="countdown later">${fmtDiff(diffMin)}後</span>`;
       }
 
       // 途中停留所リスト（fromIdx以降）
