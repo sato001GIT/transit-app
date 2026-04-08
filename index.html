@@ -13,9 +13,6 @@
     header h1{font-size:16px;font-weight:700;letter-spacing:.05em}
     #clock{font-size:32px;font-weight:300;letter-spacing:.1em;margin-top:2px}
     #date-label{font-size:18px;opacity:.9;margin-top:3px;font-weight:500}
-    #gps-btn{background:rgba(255,255,255,.2);border:1px solid rgba(255,255,255,.5);color:white;border-radius:8px;padding:6px 10px;font-size:12px;cursor:pointer;white-space:nowrap;display:flex;align-items:center;gap:4px;min-width:72px;justify-content:center}
-    #gps-btn:active{background:rgba(255,255,255,.35)}
-    #gps-btn.gps-on{background:rgba(255,255,255,.3);border-color:white}
 
     .tab-bar{display:flex;background:white;border-bottom:1px solid #e2e8f0;position:sticky;top:82px;z-index:90}
     .tab{flex:1;padding:12px 4px;text-align:center;font-size:13px;font-weight:600;color:#718096;cursor:pointer;border-bottom:3px solid transparent;transition:.2s}
@@ -181,16 +178,8 @@
 
 <header>
   <h1>🚌🚃 ちえみの乗りもの時刻表</h1>
-  <div class="header-top" style="margin-top:4px">
-    <div>
-      <div id="clock">--:--:--</div>
-      <div id="date-label"></div>
-    </div>
-    <div style="display:flex;gap:6px;align-items:center">
-      <button id="reload-btn" onclick="loadFromSheet(true)" style="background:rgba(255,255,255,.2);border:1px solid rgba(255,255,255,.5);color:white;border-radius:8px;padding:6px 10px;font-size:12px;cursor:pointer;white-space:nowrap">🔄 更新</button>
-      <button id="gps-btn" onclick="requestGPS()">📍 GPS</button>
-    </div>
-  </div>
+  <div id="clock" style="margin-top:4px">--:--:--</div>
+  <div id="date-label"></div>
   <div id="sheet-status-bar" style="font-size:10px;opacity:.75;margin-top:4px;min-height:14px"></div>
 </header>
 
@@ -341,32 +330,8 @@ function nearestStop(lat,lng){
 }
 
 function applyPosition(lat,lng){
-  const btn=document.getElementById('gps-btn');
-  const {name,d}=nearestStop(lat,lng);
-  if(name){
-    currentFrom=name;
-    const dt=d<1000?`${Math.round(d)}m`:`${(d/1000).toFixed(1)}km`;
-    btn.innerHTML=`📍 ${name}<br><span style="font-size:10px;opacity:.8">${dt}</span>`;
-    btn.classList.add('gps-on');
-    renderTimetable();
-  } else {
-    btn.textContent='📍 GPS ✓';
-    btn.classList.add('gps-on');
-  }
-}
-
-function requestGPS(){
-  const btn=document.getElementById('gps-btn');
-  if(!navigator.geolocation){ btn.textContent='📍 非対応'; return; }
-  btn.innerHTML='<span class="spin"></span>取得中…';
-  navigator.geolocation.getCurrentPosition(
-    pos=>applyPosition(pos.coords.latitude,pos.coords.longitude),
-    err=>{
-      btn.textContent='📍 GPS'; btn.classList.remove('gps-on');
-      if(err.code===1) alert('位置情報のアクセスが拒否されました。\nブラウザの設定から許可してください。');
-    },
-    {enableHighAccuracy:true,timeout:10000}
-  );
+  const {name}=nearestStop(lat,lng);
+  if(name){ currentFrom=name; renderTimetable(); }
 }
 
 function autoGPS(){
@@ -539,9 +504,7 @@ async function loadFromSheet(showMsg=true){
   const url=localStorage.getItem(SHEET_URL_KEY)||DEFAULT_SHEET_URL;
   if(!url) return;
   const bar=document.getElementById('sheet-status-bar');
-  const btn=document.getElementById('reload-btn');
   if(bar) bar.innerHTML='<span class="spin"></span> 読み込み中…';
-  if(btn) btn.disabled=true;
   try{
     const res=await fetch(url);
     if(!res.ok) throw new Error(`HTTP ${res.status}`);
@@ -555,8 +518,6 @@ async function loadFromSheet(showMsg=true){
     renderTimetable(); geocodeAllMissing();
   }catch(e){
     if(bar) bar.textContent=`❌ 読み込み失敗: ${e.message}`;
-  } finally {
-    if(btn) btn.disabled=false;
   }
 }
 
@@ -716,8 +677,6 @@ function renderTimetable(){
 
 function setFrom(name){
   currentFrom=name;
-  document.getElementById('gps-btn').textContent='📍 GPS';
-  document.getElementById('gps-btn').classList.remove('gps-on');
   renderTimetable();
 }
 
